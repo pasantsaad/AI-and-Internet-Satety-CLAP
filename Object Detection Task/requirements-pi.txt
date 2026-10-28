@@ -1,0 +1,5 @@
+# Raspberry Pi package compatibility depends on Raspberry Pi OS and Python version.
+# If installation fails, check compatible PyTorch/Ultralytics wheels for your system.
+ultralytics
+opencv-python-headless
+PyYAML

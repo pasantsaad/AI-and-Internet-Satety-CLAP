@@ -1,0 +1,20 @@
+# TEMPLATE ONLY: update the dataset path and verify class names/IDs first.
+# Expected structure under path:
+#   images/train, images/val, images/test
+#   labels/train, labels/val, labels/test
+#
+# This template assumes annotations have already been remapped to these exact IDs:
+# 0=plastic_bottle, 1=can, 2=paper, 3=cardboard, 4=glass_bottle
+# Do NOT use it unchanged if your dataset's labels use a different mapping.
+
+path: ../datasets/combined
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: plastic_bottle
+  1: can
+  2: paper
+  3: cardboard
+  4: glass_bottle
