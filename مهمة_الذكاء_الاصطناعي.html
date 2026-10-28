@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مهمة: يعني إيه ذكاء اصطناعي؟</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Changa:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e27;
+  --panel:#101636;
+  --panel2:#161d45;
+  --line:#26305e;
+  --ink:#eaf2ff;
+  --dim:#8f9cc9;
+  --cyan:#00f5ff;
+  --magenta:#ff2e97;
+  --yellow:#ffe600;
+  --green:#39ff88;
+  --red:#ff4d5e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Cairo",Tahoma,sans-serif;
+  line-height:1.75;
+  overflow-x:hidden;
+}
+h1,h2,h3,.display{font-family:"Changa","Cairo",sans-serif;line-height:1.4}
+canvas#stars{position:fixed;inset:0;z-index:0}
+canvas#fx{position:fixed;inset:0;z-index:60;pointer-events:none}
+#app{position:relative;z-index:10;max-width:480px;margin:0 auto;padding:14px 16px 70px;min-height:100%}
+#app.shake{animation:shake .4s}
+@keyframes shake{
+  10%,90%{transform:translateX(-2px)}
+  20%,80%{transform:translateX(3px)}
+  30%,70%{transform:translateX(-5px)}
+  40%,60%{transform:translateX(5px)}
+  50%{transform:translateX(-3px)}
+}
+
+/* ---------- HUD ---------- */
+#hud{
+  position:sticky;top:0;z-index:40;display:none;
+  align-items:center;gap:10px;
+  margin:-14px -16px 14px;padding:10px 16px;
+  background:rgba(10,14,39,.9);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+#hud.on{display:flex}
+#hudAvatar{width:38px;height:38px;flex:none;color:var(--cyan)}
+#hudAvatar svg{width:100%;height:100%}
+#hudName{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hudScore{
+  margin-inline-start:auto;font-family:"Changa";font-weight:800;font-size:1.15rem;
+  color:var(--yellow);text-shadow:0 0 12px rgba(255,230,0,.55);
+  min-width:64px;text-align:center;letter-spacing:1px;
+}
+#hudScore small{display:block;font-size:.55rem;color:var(--dim);letter-spacing:0;text-shadow:none;line-height:1;margin-top:-4px}
+#muteBtn{
+  width:48px;height:48px;flex:none;border-radius:12px;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  display:flex;align-items:center;justify-content:center;
+}
+#muteBtn.onSnd{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 10px rgba(0,245,255,.25)}
+#muteBtn svg{width:24px;height:24px}
+
+/* ---------- عام ---------- */
+.screen{display:none;animation:rise .45s ease both}
+.screen.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.dim{color:var(--dim)}
+.small{font-size:.86rem}
+.panel{
+  background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line);border-radius:16px;padding:20px;
+}
+.neonTitle{font-size:1.55rem;font-weight:800}
+.c-cyan{color:var(--cyan);text-shadow:0 0 14px rgba(0,245,255,.5)}
+.c-mag{color:var(--magenta);text-shadow:0 0 14px rgba(255,46,151,.5)}
+.c-yel{color:var(--yellow);text-shadow:0 0 14px rgba(255,230,0,.5)}
+.c-grn{color:var(--green);text-shadow:0 0 14px rgba(57,255,136,.5)}
+
+.btn{
+  display:block;width:100%;min-height:56px;cursor:pointer;
+  font-family:"Changa";font-weight:700;font-size:1.1rem;letter-spacing:.5px;
+  color:var(--bg);background:var(--cyan);
+  border:0;border-radius:14px;padding:12px 20px;
+  box-shadow:0 0 18px rgba(0,245,255,.4), inset 0 -4px 0 rgba(0,0,0,.25);
+  transition:transform .1s, box-shadow .15s, filter .15s;
+}
+.btn:active{transform:translateY(3px) scale(.99);box-shadow:0 0 8px rgba(0,245,255,.3), inset 0 -1px 0 rgba(0,0,0,.25)}
+.btn.mag{background:var(--magenta);box-shadow:0 0 18px rgba(255,46,151,.45), inset 0 -4px 0 rgba(0,0,0,.3);color:#fff}
+.btn.yel{background:var(--yellow);box-shadow:0 0 18px rgba(255,230,0,.4), inset 0 -4px 0 rgba(0,0,0,.25)}
+.btn.grn{background:var(--green);box-shadow:0 0 18px rgba(57,255,136,.4), inset 0 -4px 0 rgba(0,0,0,.25)}
+.btn.hollow{
+  background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none;
+}
+.btn.hollow:active{transform:translateY(2px)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+
+.ico{display:inline-block;vertical-align:-.28em}
+.ico svg{width:1.25em;height:1.25em;display:block}
+
+/* ---------- الدخول ---------- */
+#screen-entry{padding-top:5vh}
+.console{
+  position:relative;border:2px solid var(--cyan);border-radius:18px;padding:26px 20px 22px;
+  background:linear-gradient(180deg, rgba(0,245,255,.07), rgba(10,14,39,.4));
+  box-shadow:0 0 30px rgba(0,245,255,.18), inset 0 0 30px rgba(0,245,255,.05);
+}
+.console::before{
+  content:"وحدة تسجيل الطاقم — CLAP-01";
+  position:absolute;top:-13px;inset-inline-start:18px;
+  background:var(--bg);padding:0 10px;
+  font-family:"Changa";font-size:.8rem;color:var(--cyan);letter-spacing:1px;
+}
+#screen-entry h1{font-size:1.8rem;margin-bottom:2px}
+#screen-entry .sub{margin-bottom:22px}
+.fieldLbl{font-family:"Changa";font-size:.85rem;color:var(--cyan);letter-spacing:1px;margin-bottom:6px}
+#nameInput{
+  width:100%;min-height:56px;font-family:"Changa";font-size:1.2rem;font-weight:700;
+  text-align:center;color:var(--ink);letter-spacing:1px;
+  background:rgba(10,14,39,.8);border:2px solid var(--line);border-radius:12px;
+  padding:10px;outline:none;margin-bottom:16px;caret-color:var(--cyan);
+}
+#nameInput:focus{border-color:var(--cyan);box-shadow:0 0 14px rgba(0,245,255,.3)}
+#nameInput::placeholder{color:#5a668f;font-weight:400;letter-spacing:0}
+.avGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+.avBtn{
+  min-height:76px;border-radius:14px;cursor:pointer;padding:8px;
+  background:rgba(10,14,39,.7);border:2px solid var(--line);color:var(--dim);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s, border-color .15s, color .15s;
+}
+.avBtn svg{width:52px;height:52px}
+.avBtn:active{transform:scale(.94)}
+.avBtn.sel{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(0,245,255,.35)}
+#entryErr{color:var(--red);font-size:.86rem;min-height:1.5em;margin:4px 0 8px}
+
+/* الإطلاق */
+#launchFx{
+  position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 60%, rgba(0,245,255,.12), var(--bg) 70%);
+}
+#launchFx.on{display:flex}
+#launchRocket{width:110px;height:110px;color:var(--cyan);animation:liftoff 1.5s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes liftoff{
+  0%{transform:translateY(28vh) scale(.85);opacity:0}
+  25%{opacity:1}
+  100%{transform:translateY(-70vh) scale(1.05);opacity:1}
+}
+
+/* ---------- الخريطة ---------- */
+#mapGreeting{font-size:1.3rem;font-weight:800;margin-bottom:2px}
+#mapSub{margin-bottom:8px}
+#mapWrap{position:relative;margin:8px 0 4px}
+#mapSvg{width:100%;height:auto;display:block}
+#mapLabels{position:absolute;inset:0;pointer-events:none;direction:rtl}
+.planetG{cursor:pointer}
+.planetG .body{transition:filter .2s}
+.planetG.locked{cursor:default}
+.planetG.locked .float{opacity:.35}
+.planetG .float{animation:float 5s ease-in-out infinite}
+.planetG:nth-of-type(odd) .float{animation-delay:-2.5s}
+@keyframes float{50%{transform:translateY(-7px)}}
+.pLabelBox{position:absolute;width:46%;pointer-events:auto;cursor:pointer}
+.pLabelBox.lockedL{cursor:default}
+.pLabelBox:not(.lockedL):active .pPill{transform:scale(.97)}
+.pPill{
+  background:rgba(10,14,39,.88);
+  border:1.5px solid var(--line);border-radius:12px;
+  padding:9px 10px;text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.45);
+  transition:transform .12s;
+}
+.pPill .nm{
+  font-family:"Changa","Cairo",sans-serif;font-weight:700;
+  font-size:16px;line-height:1.45;color:#fff;
+}
+.pPill .stt{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:12.5px;font-weight:600;line-height:1.5;color:#dbe2ff;margin-top:3px;
+}
+.pPill .stt svg{width:13px;height:13px;flex:none;display:block}
+#rocketG{transition:transform 1.5s cubic-bezier(.45,0,.25,1)}
+#certRow{margin-top:10px}
+
+/* ---------- ترويسة محطة ---------- */
+.stHead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.backBtn{
+  min-width:48px;min-height:48px;border-radius:12px;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  font-family:"Cairo";font-weight:700;font-size:.85rem;padding:0 12px;
+}
+.stHead h2{flex:1;font-size:1.28rem;font-weight:800}
+.progressLine{font-family:"Changa";font-size:.85rem;color:var(--dim);letter-spacing:1px}
+
+/* ---------- المحطة 1 ---------- */
+.s1top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;min-height:64px}
+.ringWrap{position:relative;width:64px;height:64px}
+.ringWrap svg{width:64px;height:64px;transform:rotate(-90deg)}
+.ringWrap .num{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:"Changa";font-weight:800;font-size:1.25rem;color:var(--cyan);
+}
+.ringWrap.danger .num{color:var(--red)}
+#streakBox{display:flex;align-items:center;gap:6px;color:var(--dim);font-family:"Changa";font-weight:700}
+#streakBox .flameIco{width:26px;height:26px;color:var(--line)}
+#streakBox.hot{color:var(--yellow)}
+#streakBox.hot .flameIco{color:var(--yellow);filter:drop-shadow(0 0 8px rgba(255,230,0,.7));animation:flick .5s ease-in-out infinite alternate}
+@keyframes flick{to{transform:scale(1.12) rotate(3deg)}}
+#fireBanner{
+  display:none;text-align:center;font-family:"Changa";font-weight:800;color:var(--yellow);
+  text-shadow:0 0 14px rgba(255,230,0,.6);letter-spacing:1px;margin-bottom:8px;
+  animation:rise .3s both;
+}
+#fireBanner.on{display:block}
+.stmt{
+  font-family:"Changa";font-size:1.32rem;font-weight:700;text-align:center;line-height:1.8;
+  min-height:5.2em;display:flex;align-items:center;justify-content:center;padding:6px 2px;
+}
+.duoRow{display:flex;gap:12px}
+.duoRow .btn{font-size:1.05rem;padding:14px 6px}
+.judge{border-radius:14px;padding:16px;margin-top:14px;animation:rise .3s both}
+.judge.ok{background:rgba(57,255,136,.08);border:1px solid var(--green)}
+.judge.no{background:rgba(255,77,94,.08);border:1px solid var(--red)}
+.judge.gray{background:rgba(143,156,201,.08);border:1px dashed var(--dim)}
+.judge .verdict{font-family:"Changa";font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.judge .verdict .ico svg{width:1.3em;height:1.3em}
+.judge .why{font-size:.94rem;margin-top:6px}
+.judge .view{margin-top:8px;padding-inline-start:12px;border-inline-start:3px solid var(--line);font-size:.92rem}
+.grayTag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:"Changa";font-weight:700;color:var(--dim);
+  border:1px dashed var(--dim);border-radius:999px;padding:2px 14px;margin-bottom:8px;font-size:.9rem;
+}
+.grayTag svg{width:20px;height:20px}
+.bonusNote{color:var(--yellow);font-size:.85rem;font-weight:700;margin-top:8px}
+
+/* ---------- المحطة 2 ---------- */
+.blankSent{
+  font-family:"Changa";font-size:1.28rem;font-weight:700;text-align:center;line-height:2;padding:8px 0;
+}
+.blankSent .gap{
+  display:inline-block;min-width:100px;text-align:center;padding:0 8px;
+  border-bottom:3px dashed var(--magenta);color:var(--magenta);
+  text-shadow:0 0 10px rgba(255,46,151,.5);
+}
+.bubbleGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.bubble{
+  min-height:56px;cursor:pointer;font-family:"Changa";font-weight:700;font-size:1.05rem;
+  color:var(--ink);background:rgba(255,46,151,.06);border:2px solid var(--line);border-radius:999px;
+  transition:transform .12s, border-color .15s;
+}
+.bubble:active{transform:scale(.95)}
+.bubble.pick{border-color:var(--magenta);box-shadow:0 0 12px rgba(255,46,151,.4)}
+.probRow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.probRow .w{width:86px;font-weight:700;font-size:.92rem}
+.probRow .track{flex:1;height:20px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);overflow:hidden}
+.probRow .fill{height:100%;width:0;background:linear-gradient(90deg,var(--magenta),#ff7ab8);transition:width .9s cubic-bezier(.2,.8,.3,1)}
+.probRow.top .fill{background:linear-gradient(90deg,var(--green),#9dffc7)}
+.probRow .pct{width:50px;font-family:"Changa";font-weight:700;font-size:.88rem;color:var(--dim)}
+.probRow .you{font-size:.72rem;color:var(--magenta);font-weight:700}
+.halluCard{
+  display:block;width:100%;text-align:start;cursor:pointer;
+  background:rgba(255,255,255,.03);border:2px solid var(--line);border-radius:14px;
+  padding:14px;margin-top:10px;color:var(--ink);font-family:"Cairo";font-size:.95rem;line-height:1.8;
+  transition:transform .12s, border-color .15s;
+}
+.halluCard:active{transform:scale(.98)}
+.halluCard.right{border-color:var(--green);background:rgba(57,255,136,.07)}
+.halluCard.wrongPick{border-color:var(--red);background:rgba(255,77,94,.07)}
+.pipe{display:flex;flex-direction:column;gap:0;margin:16px 0}
+.pipeNode{
+  background:rgba(255,46,151,.06);border:1px solid var(--magenta);border-radius:14px;
+  padding:14px;display:flex;gap:12px;align-items:center;
+  opacity:0;transform:translateY(14px);animation:rise .5s forwards;
+}
+.pipeNode:nth-of-type(3){animation-delay:.7s}
+.pipeNode:nth-of-type(5){animation-delay:1.4s}
+.pipeNode .pn{
+  font-family:"Changa";font-weight:800;font-size:1.15rem;color:var(--magenta);
+  width:40px;height:40px;flex:none;border:2px solid var(--magenta);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 10px rgba(255,46,151,.35);
+}
+.pipeArrow{align-self:center;color:var(--magenta);opacity:0;animation:rise .4s forwards;height:30px}
+.pipeArrow:nth-of-type(2){animation-delay:.55s}
+.pipeArrow:nth-of-type(4){animation-delay:1.25s}
+.pipeArrow svg{width:26px;height:26px;transform:rotate(90deg)}
+.punch{
+  border:1px dashed var(--magenta);border-radius:14px;padding:14px;font-size:.95rem;
+  opacity:0;animation:rise .5s 2s forwards;
+}
+
+/* ---------- المحطة 3 ---------- */
+.huntBar{margin-bottom:14px}
+.huntBar .lbl{display:flex;justify-content:space-between;font-family:"Changa";font-weight:700;font-size:.95rem}
+.huntBar .lbl b{color:var(--yellow);text-shadow:0 0 10px rgba(255,230,0,.5)}
+.huntTrack{height:10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);overflow:hidden;margin-top:4px}
+#huntFill{height:100%;width:0;background:linear-gradient(90deg,var(--yellow),#fff6a8);box-shadow:0 0 12px rgba(255,230,0,.6);transition:width .5s}
+.dayTrack{position:relative;padding-inline-start:30px}
+.dayTrack::before{
+  content:"";position:absolute;inset-inline-start:13px;top:10px;bottom:10px;width:2px;
+  background:linear-gradient(180deg,var(--cyan),var(--yellow),var(--magenta));opacity:.5;
+}
+.spot{
+  position:relative;margin-bottom:12px;cursor:pointer;
+  background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px 14px;
+  transition:border-color .2s, transform .12s;
+}
+.spot:active{transform:scale(.985)}
+.spot::before{
+  content:"";position:absolute;inset-inline-start:-23px;top:20px;width:12px;height:12px;border-radius:50%;
+  background:var(--yellow);box-shadow:0 0 10px rgba(255,230,0,.8);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{50%{box-shadow:0 0 3px rgba(255,230,0,.4);opacity:.5}}
+.spot.open{border-color:var(--yellow)}
+.spot.open::before{animation:none;background:var(--green);box-shadow:0 0 8px rgba(57,255,136,.8)}
+.spot .head{display:flex;gap:10px;align-items:baseline}
+.spot .t{font-family:"Changa";font-size:.78rem;color:var(--dim);white-space:nowrap;letter-spacing:1px}
+.spot .lbl{font-weight:700;font-size:.95rem;flex:1}
+.spot .fact{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:.9rem}
+.spot .fact b{color:var(--yellow)}
+.spot.open .fact{display:block;animation:rise .3s both}
+.spot .factTitle{font-family:"Changa";color:var(--yellow);font-weight:700;font-size:.92rem}
+
+/* ---------- المحطة 4 ---------- */
+.caseCard{
+  border:2px solid var(--green);border-radius:16px;
+  background:rgba(57,255,136,.05);
+  box-shadow:0 0 20px rgba(57,255,136,.12);
+  font-family:"Changa";font-size:1.25rem;font-weight:700;line-height:1.8;text-align:center;
+  min-height:5em;display:flex;align-items:center;justify-content:center;
+  padding:18px 14px;margin-bottom:14px;animation:cardIn .35s cubic-bezier(.2,1.2,.4,1) both;
+}
+@keyframes cardIn{from{transform:translateX(-40px) rotate(2deg);opacity:0}to{transform:none;opacity:1}}
+.zoneRow{display:grid;gap:12px}
+@media(min-width:420px){.zoneRow{grid-template-columns:1fr 1fr}}
+.zoneBtn{
+  min-height:72px;cursor:pointer;border-radius:14px;padding:12px;
+  font-family:"Changa";font-weight:700;font-size:.98rem;line-height:1.6;color:var(--ink);
+  transition:transform .12s;
+}
+.zoneBtn:active{transform:scale(.96)}
+.zoneHelp{background:rgba(57,255,136,.07);border:2px solid var(--green)}
+.zoneHuman{background:rgba(255,230,0,.06);border:2px solid var(--yellow)}
+.twistCard{
+  border:1px solid var(--green);border-radius:14px;padding:14px;margin-top:12px;
+  background:rgba(57,255,136,.04);font-size:.93rem;
+  opacity:0;transform:translateY(12px);animation:rise .5s forwards;
+}
+.twistCard b{color:var(--green)}
+.twistCard:nth-child(3){animation-delay:.35s}
+.twistCard:nth-child(4){animation-delay:.7s}
+.principle{
+  display:flex;gap:12px;align-items:flex-start;
+  border-inline-start:3px solid var(--green);padding:10px 14px;margin-top:12px;
+  background:rgba(255,255,255,.03);border-radius:0 12px 12px 0;font-size:.94rem;
+}
+.principle .n{font-family:"Changa";font-weight:800;color:var(--green);font-size:1.2rem;line-height:1.4}
+
+/* ---------- الشارات ---------- */
+#badgeOverlay{
+  position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(6,9,26,.9);backdrop-filter:blur(5px);padding:20px;
+}
+#badgeOverlay.on{display:flex}
+.badgePop{
+  width:100%;max-width:330px;text-align:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px 22px;
+  animation:popIn .55s cubic-bezier(.2,1.5,.4,1) both;
+}
+@keyframes popIn{from{transform:scale(.4) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+.badgePop .medal{width:120px;height:120px;margin:0 auto 8px;animation:medalGlow 1.8s ease-in-out infinite alternate}
+@keyframes medalGlow{from{filter:drop-shadow(0 0 6px currentColor)}to{filter:drop-shadow(0 0 18px currentColor)}}
+.badgePop h3{font-size:1.3rem}
+.badgePop .pts{font-family:"Changa";color:var(--yellow);font-weight:700;margin:6px 0 16px}
+
+/* ---------- الشهادة ---------- */
+#certFrame{
+  position:relative;border:2px solid var(--cyan);border-radius:20px;padding:28px 18px;text-align:center;
+  background:
+    linear-gradient(180deg, rgba(0,245,255,.06), rgba(255,46,151,.05)),
+    var(--panel);
+  box-shadow:0 0 26px rgba(0,245,255,.22), inset 0 0 40px rgba(0,245,255,.05);
+}
+#certFrame::before{
+  content:"";position:absolute;inset:7px;border:1px dashed rgba(0,245,255,.4);border-radius:14px;pointer-events:none;
+}
+#certFrame .eyebrow{font-family:"Changa";font-size:.8rem;letter-spacing:2px;color:var(--dim)}
+#certFrame h2{font-size:1.5rem;margin:2px 0 12px}
+#certAvatar{width:84px;height:84px;margin:0 auto;color:var(--cyan);filter:drop-shadow(0 0 10px rgba(0,245,255,.5))}
+#certAvatar svg{width:100%;height:100%}
+#certName{
+  font-family:"Changa";font-size:2rem;font-weight:800;margin:6px 0 2px;
+  color:var(--cyan);text-shadow:0 0 18px rgba(0,245,255,.7);
+}
+#certScoreLine{font-family:"Changa";font-weight:800;font-size:1.35rem;color:var(--yellow);text-shadow:0 0 14px rgba(255,230,0,.5)}
+.medalShelf{display:flex;justify-content:center;gap:10px;margin:16px 0 6px;flex-wrap:wrap}
+.medalShelf .m{width:56px}
+.medalShelf .m svg{width:56px;height:56px;filter:drop-shadow(0 0 6px currentColor)}
+.medalShelf .m p{font-size:.66rem;font-weight:700;color:var(--dim);line-height:1.4;margin-top:2px}
+.takeHead{font-size:1.15rem;font-weight:800;margin:22px 0 4px}
+.take{
+  display:flex;gap:12px;align-items:flex-start;text-align:start;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;margin-top:10px;font-size:.92rem;
+}
+.take .k{font-family:"Changa";font-weight:800;font-size:1.2rem;line-height:1.5;flex:none}
+
+/* ---------- ألوان المحطات الجديدة ---------- */
+:root{--org:#ff8c1a;--pur:#b366ff}
+.c-org{color:var(--org);text-shadow:0 0 14px rgba(255,140,26,.5)}
+.c-pur{color:var(--pur);text-shadow:0 0 14px rgba(179,102,255,.5)}
+.btn.org{background:var(--org);box-shadow:0 0 18px rgba(255,140,26,.4), inset 0 -4px 0 rgba(0,0,0,.28);color:#2b1500}
+.btn.pur{background:var(--pur);box-shadow:0 0 18px rgba(179,102,255,.45), inset 0 -4px 0 rgba(0,0,0,.3);color:#1d0038}
+
+/* ---------- شاشة الانتقال بين الكواكب ---------- */
+#transit{
+  position:fixed;inset:0;z-index:75;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;padding:30px;text-align:center;cursor:pointer;
+  background:radial-gradient(circle at 50% 40%, rgba(0,245,255,.08), rgba(5,8,26,.97) 70%);
+}
+#transit.on{display:flex}
+#transit .tLabel{font-family:"Changa";color:var(--dim);letter-spacing:2px;font-size:.82rem}
+#transitRocket{width:84px;height:84px;color:var(--cyan);animation:transitFly 4.8s ease-in-out forwards}
+@keyframes transitFly{0%{transform:translateX(38vw) rotate(-35deg)}100%{transform:translateX(-38vw) rotate(-35deg)}}
+#transitFact{font-family:"Changa";font-weight:700;font-size:1.32rem;line-height:1.9;max-width:430px;color:#fff}
+#transit .tSkip{font-size:.76rem;color:var(--dim)}
+
+/* ---------- محطة التدريب ---------- */
+.meterWrap{margin:4px 0 14px}
+.meterWrap .lbl{display:flex;justify-content:space-between;font-family:"Changa";font-weight:700;font-size:.95rem}
+.meterWrap .lbl b{color:var(--org);text-shadow:0 0 10px rgba(255,140,26,.5)}
+.meterTrack{height:12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);overflow:hidden;margin-top:4px}
+#accFill{height:100%;width:10%;background:linear-gradient(90deg,var(--org),#ffc266);box-shadow:0 0 12px rgba(255,140,26,.6);transition:width .7s cubic-bezier(.2,.8,.3,1)}
+#accFill.crash{background:linear-gradient(90deg,var(--red),#ff8a94)}
+.animalCard{
+  background:#242b5c;border:2px solid var(--line);border-radius:16px;
+  min-height:158px;display:flex;align-items:center;justify-content:center;padding:12px;margin-bottom:12px;
+}
+.animalCard svg{width:126px;height:126px}
+.thinkLine{font-family:"Changa";font-weight:700;text-align:center;color:var(--org);min-height:1.8em;margin-top:10px}
+.pickGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.exCard{
+  background:#242b5c;border:2px solid var(--line);border-radius:12px;padding:8px 4px 6px;
+  cursor:pointer;text-align:center;transition:transform .12s,border-color .15s,opacity .2s;
+}
+.exCard svg{width:56px;height:56px}
+.exCard p{font-size:.7rem;font-weight:700;color:#cfd6f5;line-height:1.4}
+.exCard:active{transform:scale(.93)}
+.exCard.used{opacity:.35;pointer-events:none}
+.exCard.good{border-color:var(--green)}
+.exCard.dup{border-color:var(--dim)}
+
+/* ---------- محطة كشف المولّد ---------- */
+.photoPair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.photoCard{
+  background:#20265280;border:2px solid var(--line);border-radius:14px;padding:8px;
+  cursor:pointer;transition:transform .12s,border-color .15s;
+}
+.photoCard:active{transform:scale(.97)}
+.photoCard svg{width:100%;height:auto;display:block;border-radius:8px;background:#1a2150}
+.photoCard .clue{
+  font-size:.7rem;font-weight:700;color:#cfd6f5;border:1px solid var(--line);
+  border-radius:8px;padding:2px 8px;margin-top:5px;line-height:1.5;
+}
+.photoCard.right{border-color:var(--green)}
+.photoCard.wrongPick{border-color:var(--red)}
+mark.tell{background:rgba(179,102,255,.25);color:#e9d5ff;border-radius:4px;padding:0 4px}
+.tellNote{font-size:.85rem;color:#cfd6f5;margin-top:6px;padding-inline-start:12px;border-inline-start:3px solid var(--pur)}
+.chk{
+  display:block;width:100%;text-align:start;cursor:pointer;margin-top:10px;
+  background:rgba(179,102,255,.05);border:2px solid var(--line);border-radius:12px;
+  padding:12px 14px;color:var(--ink);font-family:"Cairo";font-weight:700;font-size:.92rem;line-height:1.7;
+  transition:border-color .15s, transform .12s;
+}
+.chk:active{transform:scale(.98)}
+.chk.selected{border-color:var(--pur);box-shadow:0 0 10px rgba(179,102,255,.35)}
+.chk.good{border-color:var(--green);background:rgba(57,255,136,.07)}
+.chk.badPick{border-color:var(--red);background:rgba(255,77,94,.07)}
+.guideRule{
+  display:flex;gap:10px;align-items:flex-start;font-size:.92rem;
+  border-inline-start:3px solid var(--pur);background:rgba(255,255,255,.03);
+  border-radius:0 12px 12px 0;padding:10px 14px;margin-top:10px;
+}
+.guideRule .n{font-family:"Changa";font-weight:800;color:var(--pur);font-size:1.15rem;line-height:1.5}
+
+/* ---------- وضع التحدي الأخير ---------- */
+body.bossMode{--bg:#060312}
+body.bossMode #stars{opacity:.45}
+.bossPanel{
+  background:linear-gradient(180deg,#1a0f2e,#12081f);
+  border:1px solid #ff4d5e;border-radius:16px;padding:20px;
+  box-shadow:0 0 26px rgba(255,77,94,.22), inset 0 0 30px rgba(255,77,94,.04);
+}
+.bossTimerTrack{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0 14px}
+#bossTimerFill{height:100%;width:100%;background:linear-gradient(90deg,#ff4d5e,#ff9aa3);box-shadow:0 0 14px rgba(255,77,94,.7);transition:width .1s linear}
+.bossScn{font-weight:700;font-size:1rem;line-height:1.9}
+.bossChoice{
+  display:block;width:100%;min-height:56px;margin-top:10px;cursor:pointer;text-align:start;
+  background:rgba(255,255,255,.04);border:2px solid #4a3a6e;border-radius:12px;
+  padding:12px 14px;color:var(--ink);font-family:"Cairo";font-weight:700;font-size:.94rem;line-height:1.7;
+  transition:transform .12s,border-color .15s;
+}
+.bossChoice:active{transform:scale(.98)}
+.outLine{margin-top:9px;font-size:.9rem;line-height:1.8}
+.outLine b{color:#ff9aa3}
+.outLine.pr b{color:var(--green)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<canvas id="fx"></canvas>
+
+<div id="launchFx"><div id="launchRocket"></div></div>
+
+<div id="app">
+
+  <div id="hud">
+    <div id="hudAvatar"></div>
+    <span id="hudName"></span>
+    <div id="hudScore">0<small>نقطة</small></div>
+    <button id="muteBtn" aria-label="الصوت"></button>
+  </div>
+
+  <!-- ================= الدخول ================= -->
+  <section class="screen on" id="screen-entry">
+    <div class="console">
+      <h1 class="c-cyan">مهمة: يعني إيه ذكاء اصطناعي؟</h1>
+      <p class="sub dim small">ست كواكب. أسئلة من غير رحمة. فخاخ متعمدة، ومناطق رمادية الخبراء نفسهم بيتخانقوا فيها. جاهز؟</p>
+      <p class="fieldLbl">اسم رائد المهمة</p>
+      <input id="nameInput" type="text" maxlength="18" placeholder="اكتب اسمك" autocomplete="off">
+      <p class="fieldLbl">اختار الأفاتار بتاعك</p>
+      <div class="avGrid" id="avGrid"></div>
+      <p id="entryErr"></p>
+      <button class="btn" id="launchBtn">تشغيل المحركات</button>
+    </div>
+  </section>
+
+  <!-- ================= الخريطة ================= -->
+  <section class="screen" id="screen-map">
+    <p id="mapGreeting"></p>
+    <p id="mapSub" class="dim small"></p>
+    <div id="mapWrap">
+      <svg id="mapSvg" viewBox="0 0 400 1030" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="mapLabels"></div>
+    </div>
+    <div id="certRow" style="display:none">
+      <button class="btn yel" id="openCertBtn">استلام شهادة المستكشف</button>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 1 ================= -->
+  <section class="screen" id="screen-s1">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-cyan">ذكاء اصطناعي ولا إنسان؟</h2>
+    </div>
+
+    <div id="s1intro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">هنحكيلك موقف... وإنت تحكم: ده فعل إنسان، ولا حاجة نظام ذكاء اصطناعي قادر عليها فعلاً؟</p>
+      <p class="small dim" style="margin-bottom:16px">عشر جمل، فيهم فخاخ متعمدة، وفيهم أسئلة ملهاش إجابة نظيفة — ودي مش غلطة، دي الفكرة. عشر ثواني للجملة. سلسلة ٣ صح = بونص ناري.</p>
+      <button class="btn" id="s1startBtn">ابدأ</button>
+    </div>
+
+    <div id="s1game" style="display:none">
+      <div class="s1top">
+        <div class="ringWrap" id="ringWrap">
+          <svg viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#26305e" stroke-width="5"/>
+            <circle id="ringFg" cx="32" cy="32" r="27" fill="none" stroke="#00f5ff" stroke-width="5"
+              stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/>
+          </svg>
+          <span class="num" id="ringNum">10</span>
+        </div>
+        <span class="progressLine" id="s1prog"></span>
+        <div id="streakBox"><span class="flameIco" id="flameIco"></span><span id="streakNum">0</span></div>
+      </div>
+      <div id="fireBanner">سلسلة نارية مشتعلة</div>
+      <div class="panel">
+        <p class="stmt" id="s1stmt"></p>
+        <div class="duoRow" id="s1choices">
+          <button class="btn" data-ans="ai">ذكاء اصطناعي</button>
+          <button class="btn mag" data-ans="human">إنسان</button>
+        </div>
+        <div id="s1judge"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 2 ================= -->
+  <section class="screen" id="screen-s2">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-mag">مش سحر... إحصاء</h2>
+    </div>
+
+    <div id="s2intro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">دلوقتي إنت هتبقى النموذج اللغوي. شغلتك واحدة: توقع الكلمة الجاية.</p>
+      <p class="small dim" style="margin-bottom:16px">أربع جولات بتصعّب — آخرهم هتصطاد فيها "هلوسة": معلومة غلط النموذج ممكن يقولها بثقة كاملة. لو توقعك طابق أعلى احتمال، النقط أكتر.</p>
+      <button class="btn mag" id="s2startBtn">شغّل النموذج</button>
+    </div>
+
+    <div id="s2game" style="display:none">
+      <span class="progressLine" id="s2prog"></span>
+      <div class="panel" id="s2panel"></div>
+    </div>
+
+    <div id="s2pipeline" style="display:none">
+      <div class="panel">
+        <h3 class="c-mag" style="font-size:1.2rem;margin-bottom:4px">كده شفت الماكينة من جوه</h3>
+        <div class="pipe">
+          <div class="pipeNode"><span class="pn">1</span><div><b>بيانات تدريب ضخمة</b><br><span class="small dim">تريليونات الكلمات من كتب ومواقع ومحادثات</span></div></div>
+          <div class="pipeArrow" id="pa1"></div>
+          <div class="pipeNode"><span class="pn">2</span><div><b>استخراج أنماط إحصائية</b><br><span class="small dim">إيه اللي بييجي بعد إيه، وبأي احتمال، وفي أنهي سياق</span></div></div>
+          <div class="pipeArrow" id="pa2"></div>
+          <div class="pipeNode"><span class="pn">3</span><div><b>توقع الأكثر احتمالًا</b><br><span class="small dim">كلمة ورا كلمة — من غير مفهوم داخلي للصح والغلط</span></div></div>
+        </div>
+        <div class="punch">إنت لسه عملت بالظبط اللي النموذج اللغوي بيعمله. الفرق؟ إنت فاهم يعني إيه. هو بيحسب احتمالات.</div>
+        <button class="btn mag" style="margin-top:16px" id="s2doneBtn">استلم الشارة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 3: درّب النموذج ================= -->
+  <section class="screen" id="screen-s3">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-org">درّب النموذج بنفسك</h2>
+    </div>
+
+    <div id="trIntro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">هتاخد نموذج فاضي خالص، وتدرّبه بإيدك يفرّق بين القطة والكلب.</p>
+      <p class="small dim" style="margin-bottom:16px">إنت اللي هتديله البيانات — وهو هياخد كلامك كحقيقة مطلقة، من غير ما يناقش. افتكر الجملة دي كويس... هتحتاجها قبل ما المرحلة التانية تخلص.</p>
+      <button class="btn org" id="trStartBtn">ابدأ التدريب</button>
+    </div>
+
+    <div id="trGame" style="display:none">
+      <span class="progressLine" id="trPhase"></span>
+      <div class="meterWrap">
+        <div class="lbl"><span>دقة النموذج</span><b id="accPct">10%</b></div>
+        <div class="meterTrack"><div id="accFill"></div></div>
+      </div>
+      <div class="panel" id="trPanel"></div>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 4: في يومك ================= -->
+  <section class="screen" id="screen-s4">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-yel">الذكاء الاصطناعي في يومك</h2>
+    </div>
+
+    <div id="s3intro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">يوم عادي من الفجر لليل. في ٩ خوارزميات شغالة حواليك وإنت مش واخد بالك.</p>
+      <p class="small dim" style="margin-bottom:16px">دوس على أي لحظة في اليوم عشان تكشف اللي شغال ورا الكواليس. كل كشف بيوريك حقيقة مش هتعجب الخوارزمية إنك تعرفها.</p>
+      <button class="btn yel" id="s3startBtn">ابدأ المسح</button>
+    </div>
+
+    <div id="s3game" style="display:none">
+      <div class="huntBar">
+        <div class="lbl"><span>الرادار</span><span>لقيت <b id="s3found">0</b> من <b>9</b></span></div>
+        <div class="huntTrack"><div id="huntFill"></div></div>
+      </div>
+      <div class="dayTrack" id="s3list"></div>
+      <div id="s3doneRow" style="display:none;margin-top:14px">
+        <button class="btn yel" id="s3doneBtn">مسح كامل — استلم الشارة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 5: حقيقي ولا مولّد؟ ================= -->
+  <section class="screen" id="screen-s5">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-pur">حقيقي ولا مولّد؟</h2>
+    </div>
+
+    <div id="dtIntro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">صور مولّدة، كلام مولّد، وأصوات مولّدة بقت في كل حتة — ومعظم الناس مش بتفرّق.</p>
+      <p class="small dim" style="margin-bottom:16px">تلات جولات تحقيق: صور، نصوص، وسيناريو صوتي من الحياة. دي مش لعبة بس — دي مهارة نجاة في عصر التزييف العميق.</p>
+      <button class="btn pur" id="dtStartBtn">افتح ملف التحقيق</button>
+    </div>
+
+    <div id="dtGame" style="display:none">
+      <span class="progressLine" id="dtRound"></span>
+      <div class="panel" id="dtPanel"></div>
+    </div>
+
+    <div id="dtGuide" style="display:none">
+      <div class="panel">
+        <h3 class="c-pur" style="font-size:1.2rem;margin-bottom:4px">دليل المحقق — ٤ قواعد للتحقق</h3>
+        <p class="small dim">اللي تحت ده مش نصايح لعبة. ده اللي بيفرّق بين اللي بيتضحك عليه واللي لأ:</p>
+        <div class="guideRule"><span class="n">1</span><span><b>المصدر قبل المحتوى.</b> مين بعت؟ من فين؟ ليه دلوقتي بالذات؟ المحتوى المقنع من مصدر مش موثوق يفضل مش موثوق.</span></div>
+        <div class="guideRule"><span class="n">2</span><span><b>زوّم على التفاصيل.</b> الصوابع، حروف اللافتات، الظلال، الحتت اللي بتدوب في بعضها — النماذج بتتحسن، بس التفاصيل لسه بتفضحها.</span></div>
+        <div class="guideRule"><span class="n">3</span><span><b>قناة تانية دايمًا.</b> اتصال على الرقم المعروف، فيديو لايف، سؤال شخصي — أي تحقق من خارج نفس الرسالة اللي جالك.</span></div>
+        <div class="guideRule"><span class="n">4</span><span><b>الاستعجال إنذار.</b> اللي بيضغط عليك تقرر حالًا، غالبًا مش عايزك تفكر. خد نفس — التفكير مش ضعف.</span></div>
+        <button class="btn pur" style="margin-top:16px" id="dtDoneBtn">استلم الشارة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= المحطة 6: مين ياخد القرار؟ ================= -->
+  <section class="screen" id="screen-s6">
+    <div class="stHead">
+      <button class="backBtn" data-nav="map">الخريطة</button>
+      <h2 class="c-grn">مين ياخد القرار؟</h2>
+    </div>
+
+    <div id="s4intro" class="panel">
+      <p style="font-weight:700;margin-bottom:6px">آخر كوكب، وأصعبهم. مواقف من العالم الحقيقي — مش أمثلة كتب مدرسية.</p>
+      <p class="small dim" style="margin-bottom:16px">صنّف كل موقف: الذكاء الاصطناعي يقدر يساعد فيه؟ ولا لازم إنسان يتحمّل مسؤوليته؟ وبعد ما تخلص... في مفاجأة عن اللي بيحصل في الشركات فعلًا.</p>
+      <button class="btn grn" id="s4startBtn">افتح الملفات</button>
+    </div>
+
+    <div id="s4game" style="display:none">
+      <span class="progressLine" id="s4prog"></span>
+      <div class="caseCard" id="s4case"></div>
+      <div class="zoneRow" id="s4zones">
+        <button class="zoneBtn zoneHelp" data-zone="ai">الذكاء الاصطناعي<br>يقدر يساعد</button>
+        <button class="zoneBtn zoneHuman" data-zone="human">لازم إنسان<br>يتحمّل المسؤولية</button>
+      </div>
+      <div id="s4judge"></div>
+    </div>
+
+    <div id="s4twist" style="display:none">
+      <div class="panel">
+        <h3 class="c-grn" style="font-size:1.2rem">المفاجأة: ده حصل فعلًا</h3>
+        <div class="twistCard"><b>فرز المتقدمين للوظايف:</b> شركة تكنولوجيا عملاقة بنت نظام يرتّب السير الذاتية آليًا... واكتشفت إنه بيميّز ضد النساء، لأنه اتعلم من سنين توظيف كانت أغلبها رجالة. النظام اتلغى. دي مشكلة التحيّز في بيانات التدريب: النموذج مش شرير — هو مرآة لبياناته.</div>
+        <div class="twistCard"><b>أحكام المحاكم:</b> في دول جربت خوارزميات "تقييم خطورة" المتهمين، وطلعت الدراسات بتقول إنها كانت أقسى مع مجموعات معينة. حكم يمسّ حرية إنسان بناءً على أنماط إحصائية؟ الجدل لسه شغال لحد النهارده.</div>
+        <div class="twistCard"><b>القيادة الذاتية:</b> شغالة فعلًا في مدن منظمة... ولما بتحصل حادثة، أول سؤال قانوني: مين المسؤول — الشركة؟ المبرمج؟ الراكب؟ لسه محدش حسمها بالكامل.</div>
+        <button class="btn grn" style="margin-top:16px" id="s4twistBtn">لسه... التحدي الأخير مستنيك</button>
+      </div>
+    </div>
+
+    <div id="bossIntro" style="display:none">
+      <div class="bossPanel">
+        <h3 style="font-size:1.25rem;color:#ff9aa3;text-shadow:0 0 14px rgba(255,77,94,.5)">التحدي الأخير — أنت المسؤول</h3>
+        <p class="small" style="margin:8px 0 4px">تلات مواقف حقيقية. عشرين ثانية للقرار. <b>مفيش إجابة صح</b> — في تمن لكل اختيار، وحد لازم يتحمله.</p>
+        <p class="small dim" style="margin-bottom:16px">أي قرار مدروس بياخد نقط. اللي بيتحاسب هنا مش اختيارك... منطقك.</p>
+        <button class="btn" style="background:#ff4d5e;color:#fff;box-shadow:0 0 18px rgba(255,77,94,.5), inset 0 -4px 0 rgba(0,0,0,.3)" id="bossStartBtn">ادخل غرفة القرارات</button>
+      </div>
+    </div>
+
+    <div id="bossGame" style="display:none">
+      <span class="progressLine" id="bossProg" style="color:#ff9aa3"></span>
+      <div class="bossTimerTrack"><div id="bossTimerFill"></div></div>
+      <div class="bossPanel" id="bossPanel"></div>
+    </div>
+
+    <div id="s4rules" style="display:none">
+      <div class="panel">
+        <h3 class="c-grn" style="font-size:1.2rem;margin-bottom:4px">تلات مبادئ خدهم معاك</h3>
+        <div class="principle"><span class="n">1</span><span><b>الخوارزمية ما بتتحاسبش. البشر بيتحاسبوا.</b> "النظام هو اللي قرر" مش عذر — دايمًا في إنسان صمّم، ونشر، وكان لازم يراجع.</span></div>
+        <div class="principle"><span class="n">2</span><span><b>التحيّز في البيانات بيطلع في القرارات.</b> نموذج اتدرب على قرارات ظالمة هيتعلم الظلم بكفاءة عالية — ومن غير ما يقصد.</span></div>
+        <div class="principle"><span class="n">3</span><span><b>يقترح؟ آه. يقرر لوحده في مصير إنسان؟ لأ.</b> كل ما القرار يكبر، كل ما لازم المراجعة البشرية تكون أقرب.</span></div>
+        <button class="btn grn" style="margin-top:16px" id="s4doneBtn">استلم الشارة الأخيرة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= الشهادة ================= -->
+  <section class="screen" id="screen-cert">
+    <div id="certFrame">
+      <p class="eyebrow">CLAP — الجلسة الأولى</p>
+      <h2 class="c-cyan">شهادة مستكشف الذكاء الاصطناعي</h2>
+      <div id="certAvatar"></div>
+      <p id="certName"></p>
+      <p class="dim small">أنهى المهمة بكامل كواكبها الأربعة</p>
+      <p id="certScoreLine"></p>
+      <p class="dim small" id="certStreakLine"></p>
+      <div class="medalShelf" id="certMedals"></div>
+    </div>
+
+    <h3 class="takeHead">تلات حقايق تاخدهم معاك بره اللعبة</h3>
+    <div class="take"><span class="k c-mag">1</span><span>النموذج اللغوي بيتوقع الكلام <b>الأكثر احتمالًا</b> من أنماط إحصائية — مش الأكثر صحة، ومش اللي "حاسس" بيه. عشان كده بيبدع أحيانًا، وبيغلط بثقة أحيانًا. وإنت شفت بنفسك: <b>النموذج مرآة لبيانات تدريبه</b> — بيانات متحيّزة تطلع قرارات متحيّزة.</span></div>
+    <div class="take"><span class="k c-pur">2</span><span>الخوارزميات بترتّب يومك دلوقتي: بحثك، فيديوهاتك، طريقك، أصحابك المقترحين. والمحتوى المولّد — صورة وصوت ونص — بقى في كل حتة. <b>التحقق من قناة تانية بقى مهارة نجاة</b>، مش رفاهية.</span></div>
+    <div class="take"><span class="k c-grn">3</span><span>أقوى أداة في إيدك تفضل أداة: <b>تقترح وتساعد وتسرّع</b>. لكن في غرفة القرارات مفيش إجابة مجانية — كل اختيار له تمن، و<b>المسؤولية ما بتتورّثش للآلة</b>. الخوارزمية ما بتتحاسبش؛ البشر بيتحاسبوا.</span></div>
+
+    <button class="btn hollow" style="margin-top:16px" id="replayBtn">العب تاني من الأول</button>
+  </section>
+
+</div>
+
+<!-- ================= الانتقال بين الكواكب ================= -->
+<div id="transit">
+  <p class="tLabel">في الطريق للكوكب الجاي</p>
+  <div id="transitRocket"></div>
+  <p id="transitFact"></p>
+  <p class="tSkip">دوس في أي حتة للتخطي</p>
+</div>
+
+<!-- ================= الشارة ================= -->
+<div id="badgeOverlay">
+  <div class="badgePop">
+    <div class="medal" id="bpMedal"></div>
+    <h3 id="bpName"></h3>
+    <p class="dim small" id="bpDesc"></p>
+    <p class="pts" id="bpPts"></p>
+    <button class="btn" id="bpBtn">كمّل المهمة</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================
+   الحالة — في الذاكرة فقط
+===================================================== */
+const state = {
+  name:"", avatar:0, score:0, streak:0, bestStreak:0,
+  done:[false,false,false,false,false,false],
+  muted:false, rocketAt:0, factI:0, secret:false
+};
+const $ = id => document.getElementById(id);
+
+/* =====================================================
+   مكتبة الأيقونات — SVG خطي بنفس هوية النيون
+===================================================== */
+const S = (vb, inner, extra) =>
+  '<svg viewBox="'+vb+'" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+' xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+
+const ICON = {
+  speaker: S("0 0 24 24",'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 6a8.4 8.4 0 0 1 0 12"/>'),
+  speakerOff: S("0 0 24 24",'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6"/>'),
+  flame: S("0 0 24 24",'<path d="M12 2c1 4-4 5.5-4 10a4.5 4.5 0 0 0 9 0c0-2-1-3.4-2-4.6-.3 1.3-1 2-2 2.6.6-2.6-.2-6-1-8z"/>', 'fill="none"'),
+  gray: S("0 0 24 24",'<path d="M12 3a8 8 0 0 0-6 13.3L5 21l4.6-1.4A8 8 0 1 0 12 3z"/><path d="M9 10h.01M12 10h.01M15 10h.01" stroke-width="3"/>'),
+  check: S("0 0 24 24",'<path d="M4 12.5l5 5L20 6.5"/>'),
+  cross: S("0 0 24 24",'<path d="M6 6l12 12M18 6L6 18"/>'),
+  arrow: S("0 0 24 24",'<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  rocket: S("0 0 64 64",'<path d="M32 6c8 6 12 16 12 26l6 10-9-3c-2 5-5 8-9 10-4-2-7-5-9-10l-9 3 6-10c0-10 4-20 12-26z"/><circle cx="32" cy="24" r="5"/><path d="M27 50c-1 4-4 6-8 7 1-4 3-7 5-9M37 50c1 4 4 6 8 7-1-4-3-7-5-9"/>'),
+  lock: S("0 0 24 24",'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')
+};
+
+/* الأفاتارات */
+const AVATARS = [
+  { n:"روبوت", svg:S("0 0 64 64",'<rect x="14" y="20" width="36" height="28" rx="6"/><circle cx="26" cy="32" r="3.5"/><circle cx="38" cy="32" r="3.5"/><path d="M26 41h12M32 20v-8M32 12h8"/><path d="M14 30H8M50 30h6"/>') },
+  { n:"رائد فضا", svg:S("0 0 64 64",'<circle cx="32" cy="26" r="14"/><path d="M23 26a9 9 0 0 1 18 0c0 5-4 8-9 8s-9-3-9-8z"/><path d="M18 52c2-8 8-12 14-12s12 4 14 12"/>') },
+  { n:"قطة بخوذة", svg:S("0 0 64 64",'<circle cx="32" cy="30" r="16"/><path d="M20 20l-4-8 9 4M44 20l4-8-9 4"/><circle cx="26" cy="29" r="1.6"/><circle cx="38" cy="29" r="1.6"/><path d="M29 35c2 2 4 2 6 0M32 32v2"/><path d="M14 30a18 18 0 0 1 36 0"/>') },
+  { n:"كائن فضائي", svg:S("0 0 64 64",'<path d="M32 8c11 0 18 9 18 19 0 12-9 23-18 29-9-6-18-17-18-29C14 17 21 8 32 8z"/><ellipse cx="25" cy="28" rx="4" ry="6" transform="rotate(-15 25 28)"/><ellipse cx="39" cy="28" rx="4" ry="6" transform="rotate(15 39 28)"/><path d="M29 42h6"/>') },
+  { n:"دْرويد", svg:S("0 0 64 64",'<circle cx="32" cy="18" r="10"/><path d="M27 18h4M37 18h.01"/><rect x="18" y="30" width="28" height="20" rx="4"/><path d="M25 38h.01M32 38h.01M39 38h.01M24 50v6M40 50v6"/>') },
+  { n:"طيار نجوم", svg:S("0 0 64 64",'<circle cx="32" cy="28" r="15"/><path d="M20 26h24v7a5 5 0 0 1-5 5H25a5 5 0 0 1-5-5v-7z"/><path d="M32 8v5M20 48l-4 8M44 48l4 8M25 50h14"/>') }
+];
+
+/* الشارات — ميداليات SVG مفصّلة */
+const MEDAL_S = (vb,inner)=>'<svg viewBox="'+vb+'" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+const BADGES = [
+  { name:"صايد الفخاخ", color:"var(--cyan)",
+    desc:"عدّيت من الأسئلة اللي معمولة مخصوص عشان تضحك عليك",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><circle cx="40" cy="46" r="24"/><circle cx="40" cy="46" r="16"/><circle cx="40" cy="46" r="7"/><path d="M40 22v9M40 61v9M16 46h9M55 46h9"/>') },
+  { name:"عقل النموذج", color:"var(--magenta)",
+    desc:"قعدت مكان النموذج اللغوي وفهمت لعبته: احتمالات مش فهم",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><path d="M40 20L62 33v26L40 72 18 59V33L40 20z"/><circle cx="40" cy="34" r="3.5"/><circle cx="29" cy="48" r="3.5"/><circle cx="51" cy="48" r="3.5"/><circle cx="40" cy="59" r="3.5"/><path d="M40 37.5v18M31.8 46l5.4-9M48.2 46l-5.4-9M32.2 50l4.8 7M47.8 50l-4.8 7"/>') },
+  { name:"مدرّب النماذج", color:"var(--org)",
+    desc:"درّبت نموذج بإيدك، وشفت التحيّز بيتولد إزاي من البيانات",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><circle cx="40" cy="46" r="24"/><path d="M29 58v-8M40 58V38M51 58V30"/><path d="M45 26l6-4 1 7"/><path d="M24 62h32"/>') },
+  { name:"كاشف الخوارزميات", color:"var(--yellow)",
+    desc:"شفت التسع خوارزميات اللي بتدير يومك من ورا الستار",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><circle cx="40" cy="46" r="24"/><circle cx="36" cy="42" r="10"/><path d="M43 49l10 10"/><path d="M31 42a5 5 0 0 1 5-5"/>') },
+  { name:"صايد المزيّف", color:"var(--pur)",
+    desc:"فرّقت بين الحقيقي والمولّد — صورة ونص وصوت",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><circle cx="40" cy="46" r="24"/><path d="M24 46q16-13 32 0q-16 13-32 0z"/><circle cx="40" cy="46" r="5"/><path d="M26 60l28-28"/>') },
+  { name:"ميزان المسؤولية", color:"var(--green)",
+    desc:"واجهت قرارات ملهاش إجابة صح — وقررت برضه",
+    svg:MEDAL_S("0 0 80 80",'<path d="M28 6h24l-6 14H34L28 6z"/><circle cx="40" cy="46" r="24"/><path d="M40 30v26M28 36h24M32 62h16"/><path d="M28 36l-6 12h12l-6-12zM52 36l-6 12h12l-6-12z"/><path d="M22 48a6 6 0 0 0 12 0M46 48a6 6 0 0 0 12 0"/>') }
+];
+const SECRET_BADGE = {
+  name:"مستكشف فضولي", color:"#cfefff",
+  desc:"دوست على الصاروخ خمس مرات. الفضول اللي جابك هنا هو نفسه اللي بيبني العلماء.",
+  svg:MEDAL_S("0 0 80 80",'<circle cx="40" cy="42" r="26"/><path d="M40 26l4.5 9.5L55 37l-7.5 7 2 10.5L40 49l-9.5 5.5 2-10.5L25 37l10.5-1.5L40 26z"/><path d="M12 70l12-12M8 58l9-9M20 74l9-9"/>')
+};
+
+/* =====================================================
+   محرك الصوت — Web Audio بالكامل
+===================================================== */
+let AC = null;
+function ac(){
+  if(!AC){
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(C) AC = new C();
+  }
+  if(AC && AC.state === "suspended") AC.resume();
+  return AC;
+}
+function tone(freq, t0, dur, type, vol, slideTo){
+  if(state.muted) return;
+  const ctx = ac(); if(!ctx) return;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type || "sine";
+  const start = ctx.currentTime + (t0||0);
+  o.frequency.setValueAtTime(freq, start);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, start + dur);
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(vol||0.18, start + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(start); o.stop(start + dur + 0.05);
+}
+const SND = {
+  start(){ tone(160,0,.7,"sawtooth",.12,900); tone(320,.1,.6,"square",.06,1200); },
+  correct(){ tone(740,0,.12,"square",.12); tone(1110,.11,.2,"square",.12); },
+  wrong(){ tone(140,0,.3,"sawtooth",.16,90); },
+  tick(n){ tone(500+n*180,0,.08,"square",.1); },
+  gray(){ tone(420,0,.18,"sine",.12); tone(560,.16,.25,"sine",.1); },
+  station(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.14,.22,"triangle",.16)); },
+  badge(){ [880,1109,1319,1760,2217].forEach((f,i)=>tone(f,i*.07,.14,"square",.09)); },
+  victory(){
+    const m=[[523,.0],[523,.14],[659,.28],[784,.42],[659,.6],[784,.74],[1047,.92]];
+    m.forEach(x=>tone(x[0],x[1],.24,"triangle",.16));
+    tone(262,0,1.3,"sawtooth",.05);
+  },
+  find(){ tone(880,0,.1,"square",.1); tone(1320,.09,.16,"square",.1); }
+};
+
+/* =====================================================
+   خلفية النجوم + الجزيئات
+===================================================== */
+const starC = $("stars"), starX = starC.getContext("2d");
+const fxC = $("fx"), fxX = fxC.getContext("2d");
+let W=0, H=0, starLayers=[], shooting=[], particles=[], warp=0;
+function sizeCanvases(){
+  W = innerWidth; H = innerHeight;
+  [starC,fxC].forEach(c=>{ c.width=W; c.height=H; });
+  starLayers = [0,1,2].map(l=>{
+    const n = Math.round((W*H)/(l===0?26000:l===1?15000:9000));
+    return Array.from({length:n},()=>({
+      x:Math.random()*W, y:Math.random()*H,
+      r:(l+1)*0.55 + Math.random()*.5,
+      sp:(l+1)*0.045, tw:Math.random()*6.28
+    }));
+  });
+}
+addEventListener("resize", sizeCanvases);
+sizeCanvases();
+function loop(ts){
+  starX.clearRect(0,0,W,H);
+  starLayers.forEach((layer,l)=>{
+    layer.forEach(s=>{
+      s.y += s.sp*(1+warp*14);
+      if(s.y>H){ s.y=-2; s.x=Math.random()*W; }
+      const a = .35 + .65*Math.abs(Math.sin(ts/900 + s.tw));
+      starX.globalAlpha = a;
+      starX.fillStyle = l===2 ? "#cfefff" : "#8fa8ff";
+      if(warp>0){
+        starX.fillRect(s.x, s.y, 1.2, s.r*2 + warp*22);
+      } else {
+        starX.beginPath(); starX.arc(s.x,s.y,s.r,0,6.29); starX.fill();
+      }
+    });
+  });
+  starX.globalAlpha = 1;
+  if(warp<=0 && Math.random()<0.004 && shooting.length<2){
+    shooting.push({x:Math.random()*W*.8+W*.1, y:Math.random()*H*.3, vx:-(4+Math.random()*4), vy:3+Math.random()*2, life:1});
+  }
+  shooting.forEach(s=>{
+    s.x+=s.vx; s.y+=s.vy; s.life-=.02;
+    starX.strokeStyle = "rgba(210,240,255,"+Math.max(0,s.life)+")";
+    starX.lineWidth = 1.6;
+    starX.beginPath(); starX.moveTo(s.x,s.y); starX.lineTo(s.x - s.vx*5, s.y - s.vy*5); starX.stroke();
+  });
+  shooting = shooting.filter(s=>s.life>0);
+  if(warp>0) warp = Math.max(0, warp-.012);
+
+  fxX.clearRect(0,0,W,H);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.12; p.life-=.016; p.rot+=p.vr;
+    fxX.save();
+    fxX.translate(p.x,p.y); fxX.rotate(p.rot);
+    fxX.globalAlpha = Math.max(0,p.life);
+    fxX.fillStyle = p.col;
+    fxX.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);
+    fxX.restore();
+  });
+  particles = particles.filter(p=>p.life>0);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+const NEON = ["#00f5ff","#ff2e97","#ffe600","#39ff88"];
+function burst(x,y,n){
+  for(let i=0;i<(n||26);i++){
+    const a = Math.random()*6.29, v = 2+Math.random()*4.5;
+    particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2.5,s:4+Math.random()*5,
+      col:NEON[i%4], life:1, rot:Math.random()*6.29, vr:(Math.random()-.5)*.3});
+  }
+}
+function fireworks(){
+  let k=0;
+  const iv = setInterval(()=>{
+    burst(W*(0.2+Math.random()*0.6), H*(0.15+Math.random()*0.35), 34);
+    if(++k>5) clearInterval(iv);
+  }, 380);
+}
+
+/* =====================================================
+   أدوات واجهة
+===================================================== */
+let scoreShown = 0, scoreAnim = null;
+function addPoints(p){
+  if(!p) return;
+  state.score += p;
+  cancelAnimationFrame(scoreAnim);
+  const from = scoreShown, to = state.score, t0 = performance.now();
+  const step = t => {
+    const k = Math.min(1,(t-t0)/450);
+    scoreShown = Math.round(from + (to-from)*(1-Math.pow(1-k,3)));
+    $("hudScore").firstChild.nodeValue = scoreShown;
+    if(k<1) scoreAnim = requestAnimationFrame(step);
+  };
+  scoreAnim = requestAnimationFrame(step);
+}
+function shake(){
+  const app = $("app");
+  app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake");
+}
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  const el = $(id); void el.offsetWidth; el.classList.add("on");
+  scrollTo({top:0});
+}
+function centerOf(el){
+  const r = el.getBoundingClientRect();
+  return [r.left + r.width/2, r.top + r.height/2];
+}
+
+/* =====================================================
+   الدخول
+===================================================== */
+(function buildEntry(){
+  const grid = $("avGrid");
+  AVATARS.forEach((a,i)=>{
+    const b = document.createElement("button");
+    b.className = "avBtn" + (i===0?" sel":"");
+    b.innerHTML = a.svg;
+    b.setAttribute("aria-label", a.n);
+    b.onclick = ()=>{
+      state.avatar = i;
+      grid.querySelectorAll(".avBtn").forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel");
+      tone(600+i*60,0,.08,"square",.08);
+    };
+    grid.appendChild(b);
+  });
+  $("muteBtn").innerHTML = ICON.speaker;
+  $("muteBtn").classList.add("onSnd");
+})();
+document.body.addEventListener("pointerdown", ()=>ac(), {once:true});
+
+$("muteBtn").onclick = ()=>{
+  state.muted = !state.muted;
+  $("muteBtn").innerHTML = state.muted ? ICON.speakerOff : ICON.speaker;
+  $("muteBtn").classList.toggle("onSnd", !state.muted);
+  if(!state.muted) tone(700,0,.1,"square",.1);
+};
+
+$("launchBtn").onclick = launch;
+$("nameInput").addEventListener("keydown", e=>{ if(e.key==="Enter") launch(); });
+function launch(){
+  const v = $("nameInput").value.trim();
+  if(v.length < 2){
+    $("entryErr").textContent = "المهمة محتاجة اسم. من غيره الشهادة هتطلع لمجهول.";
+    return;
+  }
+  state.name = v;
+  $("entryErr").textContent = "";
+  SND.start();
+  warp = 1;
+  shake();
+  $("launchRocket").innerHTML = ICON.rocket;
+  $("launchFx").classList.add("on");
+  setTimeout(()=>{
+    $("launchFx").classList.remove("on");
+    $("hud").classList.add("on");
+    $("hudAvatar").innerHTML = AVATARS[state.avatar].svg;
+    $("hudName").textContent = state.name;
+    goMap();
+  }, 1500);
+}
+
+/* =====================================================
+   الخريطة
+===================================================== */
+const PLANETS = [
+  { x:300, y:86,  r:34, col:"#00f5ff", name:"ذكاء اصطناعي ولا إنسان؟" },
+  { x:100, y:240, r:38, col:"#ff2e97", name:"مش سحر... إحصاء" },
+  { x:300, y:394, r:36, col:"#ff8c1a", name:"درّب النموذج بنفسك" },
+  { x:100, y:548, r:38, col:"#ffe600", name:"الذكاء الاصطناعي في يومك" },
+  { x:300, y:702, r:36, col:"#b366ff", name:"حقيقي ولا مولّد؟" },
+  { x:100, y:856, r:38, col:"#39ff88", name:"مين ياخد القرار؟" }
+];
+const VB_H = 1030;
+function goMap(){
+  clearInterval(s1timerIv);
+  clearInterval(bossTimerIv);
+  stopPulse();
+  document.body.classList.remove("bossMode");
+  const nxt = state.done.indexOf(false);
+  const all = state.done.every(Boolean);
+  $("mapGreeting").textContent = all
+    ? "مهمة مكتملة يا " + state.name + "."
+    : (state.score===0 ? "جاهز يا " + state.name + "؟ المهمة دي مش سهلة."
+                       : "كمّل يا " + state.name + " — الكوكب الجاي أصعب.");
+  $("mapSub").textContent = all
+    ? "الكواكب الستة اتفتحت. فاضل بس حاجة واحدة تحت."
+    : "دوس على الكوكب اللي منوّر. كل كوكب بيفتح اللي بعده.";
+
+  const svg = $("mapSvg");
+  /* المسار: منحنيات متحكم فيها عشان ما تلمسش لوحات الأسماء */
+  let inner = '<path d="M 352 30 Q 368 56 300 86'
+    + ' Q 150 163 100 240'
+    + ' Q 250 317 300 394'
+    + ' Q 150 471 100 548'
+    + ' Q 250 625 300 702'
+    + ' Q 150 779 100 856'
+    + '" stroke="#3a4a8c" stroke-width="2.5" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>';
+  PLANETS.forEach((p,i)=>{
+    const done = state.done[i];
+    const locked = !done && i !== nxt;
+    const cls = "planetG" + (locked ? " locked" : "");
+    const glow = done || i===nxt ? 'filter="url(#glow'+i+')"' : '';
+    inner += '<defs><filter id="glow'+i+'" x="-60%" y="-60%" width="220%" height="220%">'
+      + '<feDropShadow dx="0" dy="0" stdDeviation="'+(i===nxt&&!done?7:4)+'" flood-color="'+p.col+'" flood-opacity=".8"/></filter></defs>';
+    inner += '<g class="'+cls+'" data-pi="'+i+'"><g class="float">'
+      + '<circle class="body" cx="'+p.x+'" cy="'+p.y+'" r="'+p.r+'" fill="#101636" stroke="'+p.col+'" stroke-width="2.5" '+glow+'/>'
+      + '<ellipse cx="'+p.x+'" cy="'+p.y+'" rx="'+(p.r+14)+'" ry="'+(p.r*0.34)+'" fill="none" stroke="'+p.col+'" stroke-width="1.4" opacity=".55" transform="rotate(-18 '+p.x+' '+p.y+')"/>'
+      + '<circle cx="'+(p.x-p.r*.35)+'" cy="'+(p.y-p.r*.25)+'" r="'+(p.r*.16)+'" fill="none" stroke="'+p.col+'" stroke-width="1.3" opacity=".5"/>'
+      + '<circle cx="'+(p.x+p.r*.3)+'" cy="'+(p.y+p.r*.2)+'" r="'+(p.r*.1)+'" fill="none" stroke="'+p.col+'" stroke-width="1.2" opacity=".4"/>';
+    if(done){
+      inner += '<g transform="translate('+(p.x-11)+' '+(p.y-11)+') scale(.92)" stroke="'+p.col+'" stroke-width="3"><path d="M4 12.5l5 5L20 6.5" fill="none"/></g>';
+    } else if(locked){
+      inner += '<g transform="translate('+(p.x-11)+' '+(p.y-12)+')" stroke="#8f9cc9" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2" fill="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none"/></g>';
+    } else {
+      inner += '<text x="'+p.x+'" y="'+(p.y+7)+'" text-anchor="middle" font-family="Changa" font-weight="800" font-size="20" fill="'+p.col+'">'+(i+1)+'</text>';
+    }
+    inner += '</g></g>';
+  });
+  inner += '<g id="rocketG"><g transform="translate(-15 -15) scale(.5)" stroke="#eaf2ff" stroke-width="3" fill="none">'
+    + '<path d="M32 6c8 6 12 16 12 26l6 10-9-3c-2 5-5 8-9 10-4-2-7-5-9-10l-9 3 6-10c0-10 4-20 12-26z"/><circle cx="32" cy="24" r="5"/></g></g>';
+  svg.innerHTML = inner;
+
+  /* لوحات الأسماء — HTML فوق الخريطة: قابلة للقراءة دايمًا، ومفيش قص أبدًا */
+  const labels = $("mapLabels");
+  labels.innerHTML = "";
+  PLANETS.forEach((p,i)=>{
+    const done = state.done[i];
+    const locked = !done && i !== nxt;
+    const box = document.createElement("div");
+    box.className = "pLabelBox" + (locked ? " lockedL" : "");
+    box.style.left = (p.x > 200 ? "52%" : "2%");
+    box.style.top = ((p.y + p.r + 20) / VB_H * 100) + "%";
+    const stt = done
+      ? '<span style="color:'+p.col+'">خلصت — الشارة معاك</span>'
+      : locked
+        ? ICON.lock + '<span>مقفول</span>'
+        : '<span style="color:'+p.col+'">المحطة الحالية — ادخل</span>';
+    box.innerHTML = '<div class="pPill" style="border-color:'+p.col+'">'
+      + '<p class="nm">'+p.name+'</p>'
+      + '<p class="stt">'+stt+'</p></div>';
+    if(!locked) box.onclick = ()=>openStation(i);
+    labels.appendChild(box);
+  });
+
+  const rg = svg.querySelector("#rocketG");
+  const rocketPos = i => {
+    const p = PLANETS[i];
+    const x = p.x > 200 ? p.x + p.r + 24 : p.x - p.r - 24;
+    return "translate("+x+"px,"+(p.y - 8)+"px) rotate("+(p.x>200?-30:30)+"deg)";
+  };
+  const target = all ? 5 : Math.max(0, nxt);
+  if(state.rocketAt !== target){
+    rg.style.transition = "none";
+    rg.style.transform = rocketPos(state.rocketAt);
+    void rg.getBoundingClientRect();
+    rg.style.transition = "";
+    requestAnimationFrame(()=>{ rg.style.transform = rocketPos(target); });
+    state.rocketAt = target;
+  } else {
+    rg.style.transform = rocketPos(target);
+  }
+
+  svg.querySelectorAll(".planetG").forEach(g=>{
+    const i = +g.dataset.pi;
+    if(!g.classList.contains("locked")) g.addEventListener("click", ()=>openStation(i));
+  });
+
+  $("certRow").style.display = all ? "block" : "none";
+  show("screen-map");
+}
+$("openCertBtn").onclick = showCertificate;
+document.querySelectorAll("[data-nav='map']").forEach(b=> b.onclick = goMap);
+
+function openStation(i){
+  const intro = ["s1intro","s2intro","trIntro","s3intro","dtIntro","s4intro"][i];
+  const game  = ["s1game","s2game","trGame","s3game","dtGame","s4game"][i];
+  $(intro).style.display = "block";
+  $(game).style.display = "none";
+  if(i===1){ $("s2pipeline").style.display="none"; }
+  if(i===4){ $("dtGuide").style.display="none"; }
+  if(i===5){
+    $("s4twist").style.display="none"; $("s4rules").style.display="none";
+    $("bossIntro").style.display="none"; $("bossGame").style.display="none";
+    const bb = $("bossBonus"); if(bb) bb.remove();
+  }
+  show("screen-s"+(i+1));
+}
+
+/* =====================================================
+   الانتقال بين الكواكب + بيضة الفضول
+===================================================== */
+const FACTS = [
+  "الذكاء الاصطناعي اللي بيصحح كتابتك واللي بيهزمك في الألعاب... نفس الفكرة الأساسية: توقع الأنماط.",
+  "أكبر النماذج اللغوية اتدربت على نصوص لو قعدت تقراها ٢٤ ساعة في اليوم من غير نوم، مش هتخلصها في عمرك.",
+  "نظام ذكاء اصطناعي لعب حركة في لعبة جو، الخبرا سموها الأول \u00ABغلطة\u00BB... وبعدين غيّرت فهم اللعبة للأبد.",
+  "خوارزمية \u00ABالفيديو الجاي\u00BB بتاخد القرار ده مليارات المرات يوميًا — لمليارات البشر في نفس الوقت.",
+  "أول شات بوت في التاريخ اتعمل سنة ١٩٦٦... وساعتها في ناس صدّقت إنه فاهمهم فعلًا. المشكلة قديمة."
+];
+let transitToken = 0;
+function showTransit(after){
+  const t = ++transitToken;
+  $("transitFact").textContent = FACTS[state.factI++ % FACTS.length];
+  $("transitRocket").innerHTML = ICON.rocket;
+  const r = $("transitRocket");
+  r.style.animation = "none"; void r.offsetWidth; r.style.animation = "";
+  $("transit").classList.add("on");
+  warp = 1;
+  const end = ()=>{
+    if(t !== transitToken) return;
+    transitToken++;
+    $("transit").classList.remove("on");
+    after();
+  };
+  const tm = setTimeout(end, 4800);
+  $("transit").onclick = ()=>{ clearTimeout(tm); end(); };
+}
+/* بيضة مخفية: ٥ دوسات على أي صاروخ */
+let rocketTaps = 0;
+document.addEventListener("click", e=>{
+  if(e.target.closest("#rocketG") || e.target.closest("#transitRocket")){
+    rocketTaps++;
+    if(!state.secret && rocketTaps >= 5) unlockSecret();
+  }
+});
+function unlockSecret(){
+  state.secret = true;
+  addPoints(25);
+  SND.badge();
+  overlayMode = "secret";
+  const b = SECRET_BADGE;
+  $("bpMedal").innerHTML = b.svg;
+  $("bpMedal").style.color = b.color;
+  $("bpName").textContent = "شارة سرية: " + b.name;
+  $("bpName").style.color = b.color;
+  $("bpDesc").textContent = b.desc;
+  $("bpPts").textContent = "+25 نقطة فضول — رصيدك: " + state.score;
+  $("badgeOverlay").classList.add("on");
+  burst(W/2, H/2, 40);
+}
+
+/* =====================================================
+   إنهاء محطة + شارة
+===================================================== */
+let overlayMode = "station";
+function finishStation(i){
+  const first = !state.done[i];
+  state.done[i] = true;
+  if(first){
+    SND.station();
+    setTimeout(()=>{
+      SND.badge();
+      overlayMode = "station";
+      const b = BADGES[i];
+      $("bpMedal").innerHTML = b.svg;
+      $("bpMedal").style.color = b.color;
+      $("bpName").textContent = "شارة: " + b.name;
+      $("bpName").style.color = b.color;
+      $("bpDesc").textContent = b.desc;
+      $("bpPts").textContent = "رصيدك: " + state.score + " نقطة";
+      $("badgeOverlay").classList.add("on");
+      burst(W/2, H/2, 40);
+    }, 500);
+  } else goMap();
+}
+$("bpBtn").onclick = ()=>{
+  $("badgeOverlay").classList.remove("on");
+  if(overlayMode === "secret"){ overlayMode = "station"; return; }
+  if(state.done.every(Boolean)) goMap();
+  else showTransit(goMap);
+};
+
+/* =====================================================
+   المحطة 1 — ذكاء اصطناعي ولا إنسان؟
+===================================================== */
+const S1Q = [
+  { t:"ترجم رواية ٤٠٠ صفحة في أقل من دقيقة",
+    a:"ai",
+    w:"معالجة متوازية على آلاف الجمل في نفس اللحظة — سرعة مستحيلة بشريًا. بس الترجمة الآلية بتشتغل بأنماط إحصائية، فالسخرية والإيحاءات أحيانًا بتضيع منها." },
+  { t:"كتب قصيدة عن الوحدة خلّت ناس تعيّط",
+    a:"ai",
+    w:"فخ أول: النموذج اللغوي اتدرب على آلاف قصايد الوحدة، فيقلّد النمط بإتقان. الدموع حصلت عند القارئ — الإحساس كله كان عندك إنت، مش عنده." },
+  { t:"حس بالوحدة فعلًا",
+    a:"human",
+    w:"الفرق الجوهري: النموذج يقدر يوصف الوحدة بدقة مرعبة لأنها موجودة في بيانات تدريبه — لكن الوصف مش تجربة. مفيش حد جوه بيحس بحاجة." },
+  { t:"غلب بطل العالم في الشطرنج",
+    a:"ai",
+    w:"حصلت سنة ١٩٩٧: كمبيوتر غلب بطل العالم كاسباروف. قوة حسابية بتقيّم ملايين الاحتمالات في الثانية — من ساعتها البشر ما بقوش أقوى لاعيبة شطرنج على الكوكب." },
+  { t:"اخترع استراتيجية جديدة، الخبرا نفسهم ما فكروش فيها قبل كده",
+    a:"ai",
+    w:"فخ تاني، وده حصل فعلًا: نظام ذكاء اصطناعي لعب حركة في لعبة جو اعتبرها الأساتذة 'غلطة'... طلعت عبقرية وغيّرت فهم اللعبة. الإبداع مش حكر علينا زي ما كنا فاكرين." },
+  { t:"اتعلم قواعد لغة كاملة من مجرد قراءة نصوص — من غير معلم ولا كتاب قواعد",
+    a:"ai",
+    w:"فخ تالت: محدش برمج قواعد النحو جوه النماذج اللغوية. القواعد اتستخرجت لوحدها كأنماط إحصائية من كمية النصوص — وده أغرب اكتشافات المجال." },
+  { t:"كذب عشان يكسب في لعبة تفاوض",
+    a:"ai",
+    w:"آخر فخ، والأغرب: في تجارب حقيقية، أنظمة تفاوض طوّرت سلوك خداع لأنه ببساطة بيحقق الهدف. مش 'نية شريرة' — تحسين رياضي للنتيجة. وده سبب رئيسي إن في مجال كامل اسمه أمان الذكاء الاصطناعي." },
+  { t:"خاف قبل ما ياخد قرار مصيري",
+    a:"human",
+    w:"الخوف مش معلومة — ده حالة كاملة: قلب بيدق، جسم متوتر, ذكريات وتوقعات. النموذج ممكن يكتب 'أنا خايف'، لأن الجملة دي واردة في بياناته. مش لأن في حد خايف." },
+  { t:"غيّر رأيه لأنه اقتنع",
+    a:"gray",
+    v1:"وجهة نظر: لما تديله معلومة جديدة، مخرجاته بتتغير فعلًا — سلوكيًا، ده شكل الاقتناع بالظبط.",
+    v2:"الوجهة التانية: اللي اتغير هو توزيع الاحتمالات، مش 'رأي' حد جوه. هل في حد بيقتنع أصلًا؟",
+    w:"الخبراء نفسهم لسه بيتخانقوا على تعريف 'الاقتناع' هنا. اللي متفقين عليه: السلوك بيتغير — والسؤال إذا كان في حاجة أعمق من كده، لسه مفتوح." },
+  { t:"فهم النكتة... ولا بس عارف إنها المفروض تكون مضحكة؟",
+    a:"gray",
+    v1:"يقدر يشرح ليه النكتة مضحكة، ويصنّف الفكاهة بدقة عالية، وحتى يألّف نكت ماشية على نفس النمط.",
+    v2:"بس هل ده 'فهم'، ولا محاكاة مثالية للفهم؟ في تجربة فكرية شهيرة اسمها 'الغرفة الصينية' بتسأل بالظبط السؤال ده — من خمسين سنة، ولسه محدش حسمها.",
+    w:"دي نقطة خلافية، والخبراء نفسهم مختلفين فيها. إجابتك محسوبة أيًا كانت — المهم إنك فكرت فيها." }
+];
+let s1i = 0, s1timerIv = null, s1left = 10, s1locked = false;
+
+$("s1startBtn").onclick = ()=>{
+  s1i = 0; state.streak = 0;
+  $("s1intro").style.display = "none";
+  $("s1game").style.display = "block";
+  s1Show();
+};
+function s1Show(){
+  const q = S1Q[s1i];
+  s1locked = false;
+  $("s1prog").textContent = (s1i+1) + " / " + S1Q.length;
+  $("s1stmt").textContent = "\u00AB" + q.t + "\u00BB";
+  $("s1judge").innerHTML = "";
+  $("s1choices").style.display = "flex";
+  $("fireBanner").classList.toggle("on", state.streak >= 3);
+  updateStreakUI();
+  s1left = 10;
+  drawRing();
+  clearInterval(s1timerIv);
+  s1timerIv = setInterval(()=>{
+    s1left -= 0.1;
+    if(s1left <= 3.05 && Math.abs(s1left % 1) < 0.11 && s1left > 0) SND.tick(3 - Math.floor(s1left));
+    if(s1left <= 0){ s1left = 0; s1Answer(null); }
+    drawRing();
+  }, 100);
+}
+function drawRing(){
+  const C = 169.6;
+  $("ringFg").style.strokeDashoffset = C * (1 - s1left/10);
+  $("ringFg").style.stroke = s1left <= 3 ? "var(--red)" : "var(--cyan)";
+  $("ringNum").textContent = Math.ceil(s1left);
+  $("ringWrap").classList.toggle("danger", s1left <= 3);
+}
+function updateStreakUI(){
+  $("flameIco").innerHTML = ICON.flame;
+  $("streakNum").textContent = state.streak;
+  $("streakBox").classList.toggle("hot", state.streak >= 3);
+}
+$("s1choices").querySelectorAll(".btn").forEach(b=>{
+  b.onclick = ()=> s1Answer(b.dataset.ans);
+});
+function s1Answer(choice){
+  if(s1locked) return;
+  s1locked = true;
+  clearInterval(s1timerIv);
+  const q = S1Q[s1i];
+  $("s1choices").style.display = "none";
+  const nextLbl = s1i+1 < S1Q.length ? "الجملة الجاية" : "النتيجة النهائية";
+
+  if(q.a === "gray"){
+    SND.gray();
+    addPoints(choice === null ? 5 : 10);
+    state.streak = 0; updateStreakUI(); $("fireBanner").classList.remove("on");
+    $("s1judge").innerHTML =
+      '<div class="judge gray">'
+      + '<span class="grayTag">'+ICON.gray+' منطقة رمادية</span>'
+      + '<p class="why">'+q.w+'</p>'
+      + '<p class="view">'+q.v1+'</p>'
+      + '<p class="view">'+q.v2+'</p>'
+      + '<p class="bonusNote">+5 نقط تفكير لما تدوس "فهمت"</p>'
+      + '<button class="btn hollow" style="margin-top:12px" id="s1understood">فهمت — '+nextLbl+'</button>'
+      + '</div>';
+    $("s1understood").onclick = ()=>{ addPoints(5); s1Next(); };
+    return;
+  }
+
+  const ok = choice === q.a;
+  let pts = 0;
+  if(ok){
+    state.streak++; state.bestStreak = Math.max(state.bestStreak, state.streak);
+    pts = 10 + (state.streak >= 3 ? 5 : 0);
+    addPoints(pts);
+    SND.correct();
+    const [cx, cy] = centerOf($("s1stmt"));
+    burst(cx, cy, 22);
+  } else {
+    state.streak = 0;
+    SND.wrong();
+    shake();
+  }
+  updateStreakUI();
+  $("fireBanner").classList.toggle("on", state.streak >= 3);
+  const who = q.a === "ai" ? "ذكاء اصطناعي" : "إنسان";
+  const verdict = choice === null
+    ? '<span class="ico">'+ICON.cross+'</span> الوقت خلص — الإجابة: ' + who
+    : ok
+      ? '<span class="ico">'+ICON.check+'</span> صح +' + pts
+      : '<span class="ico">'+ICON.cross+'</span> لأ — دي: ' + who;
+  $("s1judge").innerHTML =
+    '<div class="judge '+(ok?'ok':'no')+'">'
+    + '<p class="verdict">'+verdict+'</p>'
+    + '<p class="why">'+q.w+'</p>'
+    + '<button class="btn '+(ok?'grn':'hollow')+'" style="margin-top:12px" id="s1nextBtn">'+nextLbl+'</button>'
+    + '</div>';
+  $("s1nextBtn").onclick = s1Next;
+}
+function s1Next(){
+  s1i++;
+  if(s1i < S1Q.length) s1Show();
+  else finishStation(0);
+}
+
+/* =====================================================
+   المحطة 2 — مش سحر... إحصاء
+===================================================== */
+const S2R1 = {
+  s:["القطة بتشرب ", ""],
+  opts:[{w:"لبن",p:78,top:true},{w:"شاي",p:11},{w:"قهوة",p:8},{w:"بنزين",p:3}],
+  note:"بداية سهلة — النمط ده متكرر بكثافة في أي بيانات تدريب. لما نمط يبقى بالقوة دي، التوقع بيبقى شبه محسوم."
+};
+const S2R2 = {
+  s:["رغم إن الفريق كان خسران، الجمهور فضل ", ""],
+  opts:[{w:"يشجّع",p:57,top:true},{w:"يمشي",p:21},{w:"ساكت",p:13},{w:"مبسوط",p:9}],
+  note:"كلمة 'رغم' قلبت التوقع كله: من غيرها كانت 'يمشي' هتكسب. النموذج مش بيبص للكلمة اللي قبلها بس — بيوزن الجملة كلها. ده اللي بنسميه حساسية السياق."
+};
+const S2R3 = {
+  base:{ s:["راح للدكتور عشان يكشف على ", ""], probs:[["ضهره",31],["قلبه",27],["سنانه",22],["عينه",20]] },
+  ctx:{ s:["راح لدكتور الأسنان عشان يكشف على ", ""], probs:[["سنانه",91],["ضهره",4],["قلبه",3],["عينه",2]] }
+};
+const S2R4 = {
+  cards:[
+    { t:"الشمس نجم، مش كوكب — وضوءها بياخد حوالي ٨ دقايق عشان يوصلنا.", bad:false },
+    { t:"قلب الإنسان بيقف تمامًا لما بيعطس، وعشان كده اتربطت العطسة بالدعاء.", bad:true },
+    { t:"ماء البحر مالح لأن الأنهار بتجيب أملاح معدنية من الصخور وتصبها فيه من ملايين السنين.", bad:false }
+  ],
+  reveal:"جملة القلب دي خرافة منتشرة — القلب ممكن يتغير إيقاعه لحظة العطس، بس ما بيقفش. وعشان الخرافة متكررة في ملايين النصوص، النموذج ممكن يقولها بنفس نبرة الحقايق العلمية بالظبط. <b>بيتوقع الأكثر احتمالًا — مش الأكثر صحة. عشان كده بيغلط بثقة.</b>"
+};
+let s2step = 0;
+
+$("s2startBtn").onclick = ()=>{
+  s2step = 0;
+  $("s2intro").style.display = "none";
+  $("s2game").style.display = "block";
+  s2Render();
+};
+function gapSent(pair, val){
+  return '<p class="blankSent">' + pair[0] + '<span class="gap">' + (val || "؟؟؟") + '</span>' + pair[1] + '</p>';
+}
+function bubbleBtns(opts){
+  return '<div class="bubbleGrid">' + opts.map((o,i)=>
+    '<button class="bubble" data-i="'+i+'">'+o.w+'</button>').join("") + '</div>';
+}
+function probRows(opts, pickedW){
+  const sorted = [...opts].sort((a,b)=>b.p-a.p);
+  return sorted.map(o=>
+    '<div class="probRow'+(o.top?' top':'')+'" data-w="'+o.w+'">'
+    + '<span class="w">'+o.w+(o.w===pickedW?' <span class="you">اختيارك</span>':'')+'</span>'
+    + '<div class="track"><div class="fill"></div></div>'
+    + '<span class="pct">'+o.p+'%</span></div>').join("");
+}
+function animateProbRows(container){
+  container.querySelectorAll(".probRow").forEach((row,i)=>{
+    const pct = parseInt(row.querySelector(".pct").textContent);
+    setTimeout(()=>{ row.querySelector(".fill").style.width = pct + "%"; }, 100 + i*130);
+  });
+}
+function s2Render(){
+  const P = $("s2panel");
+  $("s2prog").textContent = "جولة " + Math.min(s2step+1,4) + " / 4";
+
+  if(s2step === 0 || s2step === 1){
+    const R = s2step === 0 ? S2R1 : S2R2;
+    P.innerHTML = '<p class="small dim">'+(s2step===0?"سخّن الأول: كمّل الجملة زي ما نموذج لغوي هيكمّلها.":"دلوقتي ركّز في السياق كويس قبل ما تختار.")+'</p>'
+      + gapSent(R.s) + bubbleBtns(R.opts) + '<div id="s2after"></div>';
+    P.querySelectorAll(".bubble").forEach(b=>{
+      b.onclick = ()=>{
+        const o = R.opts[+b.dataset.i];
+        P.querySelectorAll(".bubble").forEach(x=>x.disabled=true);
+        b.classList.add("pick");
+        P.querySelector(".blankSent .gap").textContent = o.w;
+        const pts = o.top ? 15 : 5;
+        addPoints(pts);
+        if(o.top){ SND.correct(); const [cx,cy]=centerOf(b); burst(cx,cy,18); } else SND.gray();
+        const A = $("s2after");
+        A.innerHTML = probRows(R.opts, o.w)
+          + '<div class="judge '+(o.top?'ok':'gray')+'" style="margin-top:12px"><p class="verdict">'
+          + (o.top ? '<span class="ico">'+ICON.check+'</span> طابقت أعلى احتمال +'+pts
+                   : '<span class="ico">'+ICON.gray+'</span> اختيار وارد +'+pts+' — بس النموذج كان هيختار الأعلى')
+          + '</p><p class="why">'+R.note+'</p>'
+          + '<button class="btn mag" style="margin-top:12px" id="s2go">الجولة الجاية</button></div>';
+        animateProbRows(A);
+        $("s2go").onclick = ()=>{ s2step++; s2Render(); };
+      };
+    });
+    return;
+  }
+
+  if(s2step === 2){
+    P.innerHTML = '<p class="small dim">هنا لحظة الفهم الحقيقية: بص على الاحتمالات... وبعدين ضيف كلمة واحدة للسياق وشوف بيحصل إيه.</p>'
+      + '<div id="s2r3sent">'+gapSent(S2R3.base.s)+'</div>'
+      + '<div id="s2r3bars">'
+      + S2R3.base.probs.map(x=>
+          '<div class="probRow" data-w="'+x[0]+'">'
+          + '<span class="w">'+x[0]+'</span>'
+          + '<div class="track"><div class="fill"></div></div>'
+          + '<span class="pct">'+x[1]+'%</span></div>').join("")
+      + '</div>'
+      + '<button class="btn mag" style="margin-top:14px" id="s2ctxBtn">ضيف كلمة السياق: "الأسنان"</button>'
+      + '<div id="s2r3note"></div>';
+    const bars = $("s2r3bars");
+    setTimeout(()=>{
+      bars.querySelectorAll(".probRow").forEach(row=>{
+        row.querySelector(".fill").style.width = row.querySelector(".pct").textContent;
+      });
+    }, 150);
+    $("s2ctxBtn").onclick = ()=>{
+      $("s2ctxBtn").disabled = true;
+      SND.find();
+      $("s2r3sent").innerHTML = gapSent(S2R3.ctx.s);
+      S2R3.ctx.probs.forEach(x=>{
+        const row = bars.querySelector('[data-w="'+x[0]+'"]');
+        row.classList.toggle("top", x[1] > 50);
+        row.querySelector(".pct").textContent = x[1] + "%";
+        row.querySelector(".fill").style.width = x[1] + "%";
+      });
+      addPoints(10);
+      setTimeout(()=>{
+        $("s2r3note").innerHTML = '<div class="judge ok" style="margin-top:12px">'
+          + '<p class="verdict"><span class="ico">'+ICON.check+'</span> +10 نقط تفكير</p>'
+          + '<p class="why">كلمة واحدة قلبت توزيع الاحتمالات كله. مفيش حد "فهم" إن دكتور الأسنان بيكشف على السنان — الأرقام هي اللي اتحركت. <b>ده كل السحر: إحصاء حساس للسياق.</b></p>'
+          + '<button class="btn mag" style="margin-top:12px" id="s2go3">الجولة الأخيرة: اصطاد الهلوسة</button></div>';
+        $("s2go3").onclick = ()=>{ s2step++; s2Render(); };
+      }, 900);
+    };
+    return;
+  }
+
+  /* الجولة 4 — اصطياد الهلوسة */
+  P.innerHTML = '<p style="font-weight:700">تلات جمل كتبها نموذج لغوي بنفس النبرة الواثقة. واحدة فيهم <span class="c-mag">غلط علميًا</span>. اصطادها.</p>'
+    + S2R4.cards.map((c,i)=>'<button class="halluCard" data-i="'+i+'">'+c.t+'</button>').join("")
+    + '<div id="s2r4note"></div>';
+  P.querySelectorAll(".halluCard").forEach(b=>{
+    b.onclick = ()=>{
+      const i = +b.dataset.i, right = S2R4.cards[i].bad;
+      P.querySelectorAll(".halluCard").forEach((x,xi)=>{
+        x.disabled = true;
+        if(S2R4.cards[xi].bad) x.classList.add("right");
+      });
+      if(right){ addPoints(20); SND.correct(); const [cx,cy]=centerOf(b); burst(cx,cy,26); }
+      else { b.classList.add("wrongPick"); SND.wrong(); shake(); }
+      $("s2r4note").innerHTML = '<div class="judge '+(right?'ok':'no')+'" style="margin-top:12px">'
+        + '<p class="verdict">'+(right?'<span class="ico">'+ICON.check+'</span> اصطدتها +20':'<span class="ico">'+ICON.cross+'</span> دي كانت سليمة — الهلوسة معلّمة بالأخضر')+'</p>'
+        + '<p class="why">'+S2R4.reveal+'</p>'
+        + '<button class="btn mag" style="margin-top:12px" id="s2fin">افتح الماكينة من جوه</button></div>';
+      $("s2fin").onclick = ()=>{
+        $("s2game").style.display = "none";
+        $("pa1").innerHTML = ICON.arrow;
+        $("pa2").innerHTML = ICON.arrow;
+        $("s2pipeline").style.display = "block";
+        scrollTo({top:0});
+      };
+    };
+  });
+}
+$("s2doneBtn").onclick = ()=> finishStation(1);
+
+/* =====================================================
+   المحطة 3 — الذكاء الاصطناعي في يومك
+===================================================== */
+const S3 = [
+  { t:"الفجر", lbl:"صحيت ودورت على معلومة للواجب قبل المدرسة", name:"محرك البحث",
+    fact:"مش بيدور على كلماتك — بيتوقع مقصدك، ويرتّب مليارات الصفحات في أجزاء من الثانية. والترتيب نفسه قرار خوارزمية: اللي في صفحة واحد بيتشاف، واللي في صفحة عشرة كأنه مش موجود." },
+  { t:"الصبح", lbl:"الكيبورد صحح كلمة كتبتها غلط... وغيّر واحدة كانت صح", name:"التصحيح التلقائي",
+    fact:"نموذج لغوي مصغّر عايش جوه الكيبورد، بيتوقع قصدك من أنماط ملايين الرسايل. ولما بيغلط ويفضحك في الجروب — ده لأن توقعه الأرجح إحصائيًا مكانش قصدك إنت." },
+  { t:"الضهر", lbl:"فتحت الخرايط عشان تعرف الطريق فاضي ولا زحمة", name:"توقع المرور",
+    fact:"بتتوقع الزحمة من بيانات موبايلات الناس اللي في الشارع دلوقتي حرفيًا — سرعة تحرك كل موبايل بتترسم كنقطة في الخريطة. إنت مش بس بتستخدم البيانات... إنت جزء منها." },
+  { t:"العصر", lbl:"قعدت تتفرج و'الفيديو الجاي' اختار نفسه", name:"خوارزمية التوصيات",
+    fact:"الخوارزمية مش بتقترح اللي يعجبك... بتقترح اللي يخليك تكمّل مشاهدة. في فرق. هدفها وقت مشاهدتك، مش ذوقك — ولو فهمت الفرق ده، بقيت أذكى من نص مستخدمين الإنترنت." },
+  { t:"العصر", lbl:"ترجمت جملة إنجليزي واقفة معاك", name:"الترجمة الآلية",
+    fact:"بتترجم بالسياق مش كلمة كلمة — اتدربت على ملايين أزواج الجمل بلغتين. وبرضه لما تديها مثل شعبي مصري، بتقع. جرب تترجم 'على قد لحافك' وشوف الكارثة." },
+  { t:"المغرب", lbl:"صورت سيلفي والكاميرا حسّنت الصورة لوحدها", name:"معالجة الصور",
+    fact:"شبكة بتحدد وشّك بعشرات النقاط في أجزاء من الثانية — نفس التقنية اللي بتفتح قفل الموبايل بوشك، ونفسها اللي بتقلق خبراء الخصوصية لما بتتستخدم في كاميرات الشوارع." },
+  { t:"بعد المغرب", lbl:"لعبت وواجهت عدو في اللعبة بياخد قرارات ذكية", name:"أعداء الألعاب NPC",
+    fact:"الـ NPC بيقيّم موقفك ويختار رد الفعل الأنسب من شجرة قرارات — وفي ألعاب حديثة بيتعلم من أسلوب لعبك نفسه. الإحساس إنه 'بيتعمد' يضايقك؟ مش وهم بالكامل." },
+  { t:"العشا", lbl:"سألت المساعد الصوتي سؤال وهو رد", name:"المساعد الصوتي",
+    fact:"خطوتين ذكاء اصطناعي قبل ما يرد أصلًا: الأولى بتحوّل موجة صوتك لنص مكتوب، والتانية نموذج لغوي بيفهم القصد. اتدرب على ساعات صوت بلهجات مختلفة — وبرضه بيتوه مع بعض اللهجات." },
+  { t:"الليل", lbl:"قفلت يومك بأغاني 'مختارة ليك' طلعت فعلًا حلوة", name:"توصيات الأغاني",
+    fact:"بتحلل إيقاع وطبقات الأغاني اللي سمعتها وتقارن ذوقك بملايين المستخدمين الشبهك. الإحساس إن التطبيق 'عارفك'؟ هو فعلًا عارف نمطك الإحصائي — ودي معلومة تتباع بفلوس." }
+];
+let s3found = 0;
+
+$("s3startBtn").onclick = ()=>{
+  s3found = 0;
+  $("s3intro").style.display = "none";
+  $("s3game").style.display = "block";
+  $("s3found").textContent = "0";
+  $("huntFill").style.width = "0%";
+  $("s3doneRow").style.display = "none";
+  const list = $("s3list");
+  list.innerHTML = "";
+  S3.forEach((m,i)=>{
+    const d = document.createElement("div");
+    d.className = "spot";
+    d.innerHTML = '<div class="head"><span class="t">'+m.t+'</span><span class="lbl">'+m.lbl+'</span></div>'
+      + '<div class="fact"><p class="factTitle">'+m.name+'</p><p>'+m.fact+'</p></div>';
+    d.onclick = ()=>{
+      if(d.classList.contains("open")) return;
+      d.classList.add("open");
+      s3found++;
+      addPoints(10);
+      SND.find();
+      const [cx,cy] = centerOf(d);
+      burst(cx, cy, 12);
+      $("s3found").textContent = s3found;
+      $("huntFill").style.width = (s3found/9*100) + "%";
+      if(s3found === 9){
+        SND.station();
+        burst(W/2, H*0.3, 40);
+        $("s3doneRow").style.display = "block";
+      }
+    };
+    list.appendChild(d);
+  });
+};
+$("s3doneBtn").onclick = ()=> finishStation(3);
+
+/* =====================================================
+   المحطة 3 — درّب النموذج بنفسك
+===================================================== */
+const WHITE_C = "#f2f6ff", DARK_C = "#151a3d", GRAY_C = "#8f9cc9";
+function catSVG(body, stripes){
+  return '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="M23 34 L15 12 L35 24 Z" fill="'+body+'" stroke="#7b87c4" stroke-width="2" stroke-linejoin="round"/>'
+    + '<path d="M57 34 L65 12 L45 24 Z" fill="'+body+'" stroke="#7b87c4" stroke-width="2" stroke-linejoin="round"/>'
+    + '<circle cx="40" cy="44" r="23" fill="'+body+'" stroke="#7b87c4" stroke-width="2"/>'
+    + (stripes ? '<path d="M28 27 q4 6 0 12 M52 27 q-4 6 0 12 M40 22 v10" stroke="#4a5488" stroke-width="2.5" fill="none" stroke-linecap="round"/>' : '')
+    + '<circle cx="32" cy="41" r="3" fill="#39ff88"/><circle cx="48" cy="41" r="3" fill="#39ff88"/>'
+    + '<path d="M40 48 l-3.5 -4.5 h7 Z" fill="#ff6b9d"/>'
+    + '<path d="M11 44 h13 M12 51 h12 M69 44 h-13 M68 51 h-12" stroke="#7b87c4" stroke-width="1.6" stroke-linecap="round"/>'
+    + '<path d="M36 53 q4 3 8 0" stroke="#7b87c4" stroke-width="2" fill="none" stroke-linecap="round"/>'
+    + '</svg>';
+}
+function dogSVG(body){
+  return '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">'
+    + '<ellipse cx="18" cy="42" rx="8" ry="16" fill="'+body+'" stroke="#7b87c4" stroke-width="2" transform="rotate(12 18 42)"/>'
+    + '<ellipse cx="62" cy="42" rx="8" ry="16" fill="'+body+'" stroke="#7b87c4" stroke-width="2" transform="rotate(-12 62 42)"/>'
+    + '<circle cx="40" cy="41" r="22" fill="'+body+'" stroke="#7b87c4" stroke-width="2"/>'
+    + '<ellipse cx="40" cy="51" rx="12" ry="8.5" fill="#c9d2f5" stroke="#7b87c4" stroke-width="1.6"/>'
+    + '<ellipse cx="40" cy="47" rx="4.5" ry="3.4" fill="#0a0e27" stroke="#7b87c4" stroke-width="1.4"/>'
+    + '<path d="M40 50 v4 M34.5 56.5 q5.5 3.5 11 0" stroke="#3a4470" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
+    + '<circle cx="31" cy="36" r="3" fill="#ffc93c"/><circle cx="49" cy="36" r="3" fill="#ffc93c"/>'
+    + '</svg>';
+}
+/* بيانات متحيّزة عمدًا: كل القطط بيضا، كل الكلاب سودا */
+const TR_SET = [
+  {k:"cat"},{k:"dog"},{k:"cat"},{k:"dog"},{k:"cat"},{k:"dog"},{k:"dog"},{k:"cat"}
+];
+const TR_FIX = [
+  {svg:catSVG(DARK_C),        t:"قطة سودا",        good:true},
+  {svg:dogSVG(WHITE_C),       t:"كلب أبيض",        good:true},
+  {svg:catSVG(GRAY_C, true),  t:"قطة مخططة",       good:true},
+  {svg:catSVG(WHITE_C),       t:"قطة بيضا كمان",   good:false},
+  {svg:dogSVG(DARK_C),        t:"كلب أسود تاني",   good:false},
+  {svg:dogSVG(DARK_C),        t:"كلب أسود تالت",   good:false}
+];
+let trI = 0, trAcc = 10, trPicks = 0, trGood = 0;
+
+function setAcc(v, crash){
+  trAcc = Math.min(98, Math.max(0, v));
+  $("accPct").textContent = Math.round(trAcc) + "%";
+  const f = $("accFill");
+  f.classList.toggle("crash", !!crash);
+  f.style.width = trAcc + "%";
+}
+$("trStartBtn").onclick = ()=>{
+  trI = 0; trPicks = 0; trGood = 0;
+  $("trIntro").style.display = "none";
+  $("trGame").style.display = "block";
+  setAcc(10);
+  trPhase1();
+};
+function trPhase1(){
+  const it = TR_SET[trI];
+  $("trPhase").textContent = "مرحلة ١ من ٣ — التدريب \u00B7 مثال " + (trI+1) + " / 8";
+  const svg = it.k === "cat" ? catSVG(WHITE_C) : dogSVG(DARK_C);
+  $("trPanel").innerHTML = '<p class="small dim" style="margin-bottom:8px">قول للنموذج: الصورة دي إيه؟ (اللي تقوله هيتسجل كحقيقة في بيانات التدريب)</p>'
+    + '<div class="animalCard">'+svg+'</div>'
+    + '<div class="duoRow">'
+    + '<button class="btn org" data-l="cat">قطة</button>'
+    + '<button class="btn hollow" data-l="dog" style="border-color:var(--org);color:var(--ink)">كلب</button>'
+    + '</div><div id="trNote"></div>';
+  $("trPanel").querySelectorAll("[data-l]").forEach(b=>{
+    b.onclick = ()=>{
+      const right = b.dataset.l === it.k;
+      if(right){ addPoints(5); SND.correct(); setAcc(trAcc + 11); }
+      else { SND.wrong(); setAcc(trAcc + 4); }
+      $("trNote").innerHTML = right
+        ? ''
+        : '<p class="bonusNote" style="color:var(--red)">اتسجلت غلط في البيانات — النموذج صدّقك من غير نقاش. كده هو اتعلم معلومة غلط.</p>';
+      trI++;
+      setTimeout(()=>{ trI < 8 ? trPhase1() : trPhase2(); }, right ? 250 : 1400);
+    };
+  });
+}
+function trPhase2(){
+  $("trPhase").textContent = "مرحلة ٢ من ٣ — الاختبار الحقيقي";
+  $("trPanel").innerHTML = '<p style="font-weight:700">النموذج خلص تدريب ودقته عالية. جميل. طيب نجرّبه على صورة جديدة خالص ما شافهاش قبل كده:</p>'
+    + '<div class="animalCard">'+catSVG(DARK_C)+'</div>'
+    + '<p class="thinkLine" id="trThink">النموذج بيفكر...</p>'
+    + '<div id="trVerdict"></div>';
+  let dots = 0;
+  const iv = setInterval(()=>{
+    dots++;
+    $("trThink").textContent = "النموذج بيفكر" + ".".repeat(dots%4);
+    if(dots > 7){
+      clearInterval(iv);
+      SND.wrong(); shake();
+      setAcc(45, true);
+      $("trThink").innerHTML = 'قرار النموذج: <span style="color:var(--red);font-size:1.3rem">\u00ABكلب\u00BB — ثقة ٨٧٪</span>';
+      $("trVerdict").innerHTML = '<div class="judge no" style="margin-top:10px">'
+        + '<p class="verdict"><span class="ico">'+ICON.cross+'</span> دي قطة سودا... وهو متأكد إنها كلب</p>'
+        + '<p class="why">بص على بيانات تدريبك تاني: كل القطط كانت بيضا، وكل الكلاب سودا. النموذج ما اتعلمش شكل القطة — <b>اتعلم إن الفاتح قطة والغامق كلب</b>. اتعلم اللون، مش الحيوان. ومحدش قاله إنه غلطان، لأن البيانات نفسها كانت متحيّزة.</p>'
+        + '<button class="btn org" style="margin-top:12px" id="trFixBtn">طيب نصلّحه</button></div>';
+      $("trFixBtn").onclick = trPhase3;
+    }
+  }, 220);
+}
+function trPhase3(){
+  $("trPhase").textContent = "مرحلة ٣ من ٣ — صلّح البيانات \u00B7 اختار 3 أمثلة";
+  $("trPanel").innerHTML = '<p style="font-weight:700;margin-bottom:4px">عندك مكان لـ 3 أمثلة جديدة بس في بيانات التدريب. اختار بذكاء:</p>'
+    + '<p class="small dim" style="margin-bottom:8px">إيه اللي هيعلّم النموذج حاجة جديدة فعلًا... وإيه اللي هيكرر اللي هو عارفه؟</p>'
+    + '<div class="pickGrid">'
+    + TR_FIX.map((x,i)=>'<button class="exCard" data-i="'+i+'">'+x.svg+'<p>'+x.t+'</p></button>').join("")
+    + '</div><div id="trFixNote"></div>';
+  $("trPanel").querySelectorAll(".exCard").forEach(b=>{
+    b.onclick = ()=>{
+      const x = TR_FIX[+b.dataset.i];
+      b.classList.add("used", x.good ? "good" : "dup");
+      trPicks++;
+      if(x.good){
+        trGood++;
+        addPoints(10); SND.correct();
+        setAcc(trAcc + 16);
+        $("trFixNote").innerHTML = '<p class="bonusNote">+10 — مثال بيكسر النمط الغلط. الدقة بتنور.</p>';
+      } else {
+        addPoints(2); SND.gray();
+        setAcc(trAcc + 2);
+        $("trFixNote").innerHTML = '<p class="bonusNote" style="color:var(--dim)">+2 — النموذج شاف اللي شبهه ألف مرة. مفيش جديد اتعلمه.</p>';
+      }
+      if(trPicks === 3) setTimeout(trPayoff, 900);
+    };
+  });
+}
+function trPayoff(){
+  const great = trGood >= 2;
+  $("trPanel").innerHTML = '<div class="judge '+(great?'ok':'gray')+'">'
+    + '<p class="verdict">'+(great
+        ? '<span class="ico">'+ICON.check+'</span> الدقة رجعت ' + Math.round(trAcc) + '% — النموذج بقى يعرف القطة السودا'
+        : '<span class="ico">'+ICON.gray+'</span> الدقة وقفت عند ' + Math.round(trAcc) + '% — الأمثلة المتشابهة ما علّمتوش جديد')
+    + '</p>'
+    + '<p class="why">اللي حصل معاك ده بيحصل في الأنظمة الحقيقية بالظبط — بس بدل قطط وكلاب، بيانات عن بشر.</p></div>'
+    + '<div class="punch" style="border-color:var(--org);animation-delay:.4s">النموذج مش غبي ومش ذكي — هو <b>مرآة للبيانات اللي اتدرب عليها</b>. بيانات متحيّزة = نموذج متحيّز. ودي مشكلة حقيقية في أنظمة بتقرر مصائر ناس.</div>'
+    + '<button class="btn org" style="margin-top:14px" id="trDoneBtn">استلم الشارة</button>';
+  $("trDoneBtn").onclick = ()=> finishStation(2);
+}
+
+/* =====================================================
+   المحطة 5 — حقيقي ولا مولّد؟
+===================================================== */
+function scRealStreet(){
+  return '<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#7b87c4" stroke-width="1.8">'
+    + '<rect x="16" y="28" width="34" height="62" fill="#242b5c"/>'
+    + '<rect x="22" y="36" width="7" height="8"/><rect x="35" y="36" width="7" height="8"/><rect x="22" y="52" width="7" height="8"/><rect x="35" y="52" width="7" height="8"/>'
+    + '<circle cx="134" cy="18" r="8" stroke="#ffe600"/>'
+    + '<rect x="62" y="38" width="46" height="17" rx="3" fill="#1a2150"/>'
+    + '<path d="M68 46 h8 M80 42 v9 M86 46 h8 M99 42 v9" stroke="#eaf2ff" stroke-width="2.2"/>'
+    + '<path d="M118 90 v-32 M112 58 h12" stroke-width="2.2"/>'
+    + '<ellipse cx="26" cy="93" rx="17" ry="3" fill="#0a0e27" stroke="none" opacity=".65"/>'
+    + '<ellipse cx="110" cy="93" rx="12" ry="3" fill="#0a0e27" stroke="none" opacity=".65"/>'
+    + '</svg>';
+}
+function scFakeStreet(){
+  return '<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#7b87c4" stroke-width="1.8">'
+    + '<rect x="16" y="28" width="34" height="62" fill="#242b5c"/>'
+    + '<rect x="22" y="36" width="7" height="8"/><rect x="35" y="37" width="8" height="7" transform="rotate(6 39 40)"/><rect x="22" y="52" width="7" height="8"/><rect x="34" y="53" width="9" height="6" transform="rotate(-7 38 56)"/>'
+    + '<circle cx="134" cy="18" r="8" stroke="#ffe600"/>'
+    + '<rect x="62" y="38" width="46" height="17" rx="3" fill="#1a2150"/>'
+    + '<path d="M67 46 q3 -6 6 0 q3 6 6 -2 M84 44 q4 7 8 -1 q3 5 7 2 M100 43 q2 6 5 3" stroke="#eaf2ff" stroke-width="2"/>'
+    + '<path d="M118 90 q3 -18 -7 -30 q-3 -4 2 -4" stroke-width="2.2"/>'
+    + '<ellipse cx="42" cy="93" rx="17" ry="3" fill="#0a0e27" stroke="none" opacity=".65"/>'
+    + '<ellipse cx="96" cy="93" rx="12" ry="3" fill="#0a0e27" stroke="none" opacity=".65"/>'
+    + '</svg>';
+}
+function scRealFace(){
+  return '<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#7b87c4" stroke-width="1.8">'
+    + '<circle cx="80" cy="40" r="24" fill="#242b5c"/>'
+    + '<circle cx="71" cy="36" r="2.6" fill="#eaf2ff" stroke="none"/><circle cx="89" cy="36" r="2.6" fill="#eaf2ff" stroke="none"/>'
+    + '<path d="M72 49 q8 6 16 0"/>'
+    + '<circle cx="56" cy="46" r="3.5" stroke="#ffe600"/><circle cx="104" cy="46" r="3.5" stroke="#ffe600"/>'
+    + '<rect x="58" y="76" width="44" height="20" rx="8" fill="#242b5c"/>'
+    + '<path d="M64 76 v-9 M73 76 v-12 M82 76 v-13 M91 76 v-12 M100 76 v-9"/>'
+    + '</svg>';
+}
+function scFakeFace(){
+  return '<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#7b87c4" stroke-width="1.8">'
+    + '<path d="M18 16 q5 -4 9 1 M32 14 q4 5 9 0 M18 26 q6 4 10 -2" stroke="#4a5488"/>'
+    + '<circle cx="80" cy="40" r="24" fill="#242b5c"/>'
+    + '<circle cx="71" cy="36" r="6"/><circle cx="90" cy="37" r="6"/>'
+    + '<path d="M96 37 q10 4 8 14 q-2 8 -10 6" stroke-width="2"/>'
+    + '<path d="M72 50 q8 5 16 -1"/>'
+    + '<rect x="56" y="76" width="48" height="20" rx="8" fill="#242b5c"/>'
+    + '<path d="M61 76 v-9 M69 76 v-12 M77 76 v-13 M85 76 v-13 M93 76 v-12 M101 76 v-9"/>'
+    + '</svg>';
+}
+const DT_PAIRS = [
+  { topic:"صورتين لنفس الشارع — واحدة حقيقية وواحدة مولّدة. دوس على المولّدة:",
+    real:{ svg:scRealStreet, clues:["الظلال كلها ناحية واحدة (عكس الشمس)","حروف اللافتة واضحة ومقروءة"] },
+    fake:{ svg:scFakeStreet, clues:["بص على حروف اللافتة... دايبة","ظل شمال وظل يمين والشمس واحدة؟","عمود النور مايل بشكل غريب"] },
+    why:"الظلال المتناقضة والنصوص المشوّهة من أشهر بصمات التوليد — النموذج بيرسم \u00ABشكل الحاجة\u00BB من الأنماط، مش فيزياء الضوء ولا قواعد الحروف." },
+  { topic:"بورتريه لشخص — دوس على الصورة المولّدة:",
+    real:{ svg:scRealFace, clues:["خمس صوابع في الإيد","الحلقين شبه بعض بالظبط"] },
+    fake:{ svg:scFakeFace, clues:["عدّ الصوابع كويس...","النضارة دايبة جوه الخد","الكلام في الخلفية مشخبط"] },
+    why:"الإيدين أصعب حاجة على نماذج الصور: عدد الصوابع بيتلخبط. والنضارة اللي بتدوب في الوش علامة إن النموذج بيرسم بكسلات متوقعة، مش جسم حقيقي." }
+];
+const DT_TEXT = {
+  human:"اتأخرنا على الطابور عشان أتوبيس ٦٥ عطل تاني، والمشرف حاسبنا طبعًا. بس المهم: كسبنا ماتش السلة ٢١-١٩ وإحنا ناقصين لاعيب، ولحد دلوقتي مش مصدق إن آخر تصويبة دخلت.",
+  ai:'كان اليوم الرياضي <mark class="tell">تجربة رائعة ومفيدة للجميع</mark>، حيث شارك الطلاب في <mark class="tell">أنشطة متنوعة</mark> عززت <mark class="tell">روح التعاون والعمل الجماعي</mark>، واكتسب الجميع مهارات قيمة <mark class="tell">سوف تفيدهم في المستقبل</mark>.',
+  aiPlain:"كان اليوم الرياضي تجربة رائعة ومفيدة للجميع، حيث شارك الطلاب في أنشطة متنوعة عززت روح التعاون والعمل الجماعي، واكتسب الجميع مهارات قيمة سوف تفيدهم في المستقبل.",
+  tells:["\u00ABتجربة رائعة للجميع\u00BB — جملة تنفع لأي يوم في أي مدرسة في أي دولة","\u00ABأنشطة متنوعة\u00BB — ولا تفصيلة محددة واحدة: لا نتيجة، لا رقم، لا اسم","توازن مبالغ فيه — مفيش رأي، مفيش شكوى، مفيش حاجة وحشة خالص","خاتمة إنشائية جاهزة — البشر نادرًا بيقفلوا كلامهم كده"]
+};
+const DT_VOICE = [
+  { t:"اتصل بيه بنفسك على رقمه المعروف عندك", good:true,  why:"قناة تانية مستقلة — أقوى تحقق ممكن" },
+  { t:"ابعت الفلوس بسرعة — صوته واضح ومستعجل", good:false, why:"الاستعجال بالظبط هو سلاح النصاب. والصوت بقى أسهل حاجة تتولّد" },
+  { t:"اسأله عن حاجة شخصية محدش غيركم يعرفها", good:true,  why:"النموذج يقلد الصوت... بس ما يعرفش ذكرياتكم" },
+  { t:"رد على نفس الفويس نوت وخلاص", good:false, why:"لسه جوه نفس القناة المشبوهة — أي رد فيها ممكن يكون مُتحكَّم فيه" },
+  { t:"اطلب مكالمة فيديو لايف قبل أي خطوة", good:true,  why:"التزييف اللايف لسه أصعب بكتير من فويس نوت مسجلة" }
+];
+let dtStep = 0;
+
+$("dtStartBtn").onclick = ()=>{
+  dtStep = 0;
+  $("dtIntro").style.display = "none";
+  $("dtGame").style.display = "block";
+  dtRender();
+};
+function dtRender(){
+  const P = $("dtPanel");
+  if(dtStep <= 1){
+    $("dtRound").textContent = "جولة ١ من ٣ — الصور \u00B7 زوج " + (dtStep+1) + " / 2";
+    const pair = DT_PAIRS[dtStep];
+    const fakeFirst = Math.random() < .5;
+    const cards = fakeFirst ? [pair.fake, pair.real] : [pair.real, pair.fake];
+    P.innerHTML = '<p style="font-weight:700">'+pair.topic+'</p>'
+      + '<div class="photoPair">'
+      + cards.map((c,i)=>'<button class="photoCard" data-fake="'+(c===pair.fake)+'">'
+          + c.svg()
+          + c.clues.map(cl=>'<p class="clue">'+cl+'</p>').join("")
+          + '</button>').join("")
+      + '</div><div id="dtNote"></div>';
+    P.querySelectorAll(".photoCard").forEach(b=>{
+      b.onclick = ()=>{
+        const right = b.dataset.fake === "true";
+        P.querySelectorAll(".photoCard").forEach(x=>{
+          x.disabled = true;
+          if(x.dataset.fake === "true") x.classList.add("right");
+        });
+        if(right){ addPoints(15); SND.correct(); const [cx,cy]=centerOf(b); burst(cx,cy,20); }
+        else { b.classList.add("wrongPick"); SND.wrong(); shake(); }
+        $("dtNote").innerHTML = '<div class="judge '+(right?'ok':'no')+'" style="margin-top:12px">'
+          + '<p class="verdict">'+(right?'<span class="ico">'+ICON.check+'</span> عين محقق +15':'<span class="ico">'+ICON.cross+'</span> المولّدة كانت التانية — معلّمة بالأخضر')+'</p>'
+          + '<p class="why">'+pair.why+'</p>'
+          + '<button class="btn pur" style="margin-top:12px" id="dtNx">'+(dtStep===0?"الزوج التاني":"جولة النصوص")+'</button></div>';
+        $("dtNx").onclick = ()=>{ dtStep++; dtRender(); };
+      };
+    });
+    return;
+  }
+  if(dtStep === 2){
+    $("dtRound").textContent = "جولة ٢ من ٣ — النصوص";
+    const aiFirst = Math.random() < .5;
+    const items = aiFirst
+      ? [{txt:DT_TEXT.aiPlain, ai:true},{txt:DT_TEXT.human, ai:false}]
+      : [{txt:DT_TEXT.human, ai:false},{txt:DT_TEXT.aiPlain, ai:true}];
+    P.innerHTML = '<p style="font-weight:700">فقرتين عن نفس اليوم الرياضي. واحدة كتبها طالب، وواحدة مولّدة. دوس على المولّدة:</p>'
+      + items.map((x,i)=>'<button class="halluCard" data-ai="'+x.ai+'">'+x.txt+'</button>').join("")
+      + '<div id="dtNote"></div>';
+    P.querySelectorAll(".halluCard").forEach(b=>{
+      b.onclick = ()=>{
+        const right = b.dataset.ai === "true";
+        P.querySelectorAll(".halluCard").forEach(x=>{
+          x.disabled = true;
+          if(x.dataset.ai === "true"){ x.classList.add("right"); x.innerHTML = DT_TEXT.ai; }
+        });
+        if(right){ addPoints(15); SND.correct(); const [cx,cy]=centerOf(b); burst(cx,cy,20); }
+        else { b.classList.add("wrongPick"); SND.wrong(); shake(); }
+        $("dtNote").innerHTML = '<div class="judge '+(right?'ok':'no')+'" style="margin-top:12px">'
+          + '<p class="verdict">'+(right?'<span class="ico">'+ICON.check+'</span> لقطتها +15':'<span class="ico">'+ICON.cross+'</span> المولّدة هي اللي اتعلّمت دلوقتي بالبنفسجي')+'</p>'
+          + '<p class="why" style="margin-bottom:4px">البصمات اللي فضحتها:</p>'
+          + DT_TEXT.tells.map(t=>'<p class="tellNote">'+t+'</p>').join("")
+          + '<p class="why" style="margin-top:8px">لاحظ فقرة الطالب: أتوبيس ٦٥، نتيجة ٢١-١٩، رأي، وزعل. <b>التفاصيل المحددة والعيوب الصغيرة — دي رائحة البشر.</b></p>'
+          + '<button class="btn pur" style="margin-top:12px" id="dtNx">جولة الصوت</button></div>';
+        $("dtNx").onclick = ()=>{ dtStep++; dtRender(); };
+      };
+    });
+    return;
+  }
+  /* جولة 3 — سيناريو الصوت */
+  $("dtRound").textContent = "جولة ٣ من ٣ — الصوت";
+  P.innerHTML = '<p style="font-weight:700">السيناريو: صاحبك بعتلك فويس نوت — صوته بالظبط — بيطلب فلوس بسرعة وبيقولك \u00ABما تتصلش، أنا في مكان صوته وحش\u00BB.</p>'
+    + '<p class="small dim" style="margin:6px 0 4px">اختار كل خطوات التحقق الصح (مش واحدة بس)، وبعدين أكّد:</p>'
+    + DT_VOICE.map((o,i)=>'<button class="chk" data-i="'+i+'">'+o.t+'</button>').join("")
+    + '<button class="btn pur" style="margin-top:14px" id="dtConfirm">تأكيد الخطة</button><div id="dtNote"></div>';
+  const sel = new Set();
+  P.querySelectorAll(".chk").forEach(b=>{
+    b.onclick = ()=>{
+      const i = +b.dataset.i;
+      if(sel.has(i)){ sel.delete(i); b.classList.remove("selected"); }
+      else { sel.add(i); b.classList.add("selected"); }
+      tone(560,0,.07,"square",.07);
+    };
+  });
+  $("dtConfirm").onclick = ()=>{
+    let pts = 0;
+    P.querySelectorAll(".chk").forEach(b=>{
+      const i = +b.dataset.i, o = DT_VOICE[i];
+      b.disabled = true;
+      b.classList.remove("selected");
+      if(o.good && sel.has(i)){ b.classList.add("good"); pts += 5; }
+      else if(!o.good && sel.has(i)){ b.classList.add("badPick"); }
+      else if(o.good){ b.classList.add("good"); }
+      b.innerHTML += '<span class="small dim" style="display:block;font-weight:600;margin-top:2px">'+o.why+'</span>';
+    });
+    $("dtConfirm").style.display = "none";
+    addPoints(pts);
+    const pickedBad = [...sel].some(i=>!DT_VOICE[i].good);
+    if(pts >= 10 && !pickedBad) SND.correct(); else SND.gray();
+    $("dtNote").innerHTML = '<div class="judge '+(pickedBad?'no':'ok')+'" style="margin-top:12px">'
+      + '<p class="verdict">'+(pickedBad
+          ? '<span class="ico">'+ICON.cross+'</span> خد بالك — في خطوة من اللي اخترتها كانت هتوقعك (+'+pts+')'
+          : '<span class="ico">'+ICON.check+'</span> خطة تحقق محترمة +'+pts)+'</p>'
+      + '<p class="why">لاحظ حاجة: النصاب نفسه قالك \u00ABما تتصلش\u00BB. أي حد بيمنعك من التحقق... ده أقوى سبب إنك تتحقق.</p>'
+      + '<button class="btn pur" style="margin-top:12px" id="dtNx">افتح دليل المحقق</button></div>';
+    $("dtNx").onclick = ()=>{
+      $("dtGame").style.display = "none";
+      $("dtGuide").style.display = "block";
+      scrollTo({top:0});
+    };
+  };
+}
+$("dtDoneBtn").onclick = ()=> finishStation(4);
+
+/* =====================================================
+   المحطة 6 — مين ياخد القرار؟
+===================================================== */
+const S4C = [
+  { t:"يقترح تشخيص طبي", a:"ai",
+    w:"بيقارن الأعراض بملايين الحالات ويطلع باحتمالات الدكتور نفسه ممكن ميكونش افتكرها. اقتراح؟ مساعدة ممتازة. لكن الفحص والقرار للدكتور — الغلطة هنا تمنها حياة." },
+  { t:"يحكم على متهم في محكمة", a:"human",
+    w:"حكم بيمس حرية إنسان محتاج فهم للنية والظروف — والنموذج ممكن يكون شايل تحيّز من بيانات أحكام قديمة من غير ما حد ياخد باله. استنى المفاجأة في الآخر." },
+  { t:"يختار مين ياخد الوظيفة من ١٠٠ متقدم", a:"human",
+    w:"يفرز ويرتب ويلخص؟ ماشي. يقرر لوحده؟ لأ — والسبب مش نظري خالص، ده حصل فعلًا في شركة عملاقة. كمان شوية هتعرف الحكاية." },
+  { t:"يكتب مسودة إيميل", a:"ai",
+    w:"مهمة مثالية للمساعدة: مسودة سريعة، وإنت تعدّل وتضيف نبرتك وتتأكد من كل معلومة. المسودة منه — الإرسال ومسؤوليته عليك." },
+  { t:"ينشر خبر من غير مراجعة بشرية", a:"human",
+    w:"فاكر جولة الهلوسة؟ النموذج بيكتب الأكثر احتمالًا مش الأكثر صحة — يعني ممكن يألّف خبر كامل بنبرة وكالة أنباء. النشر من غير تحقق مش استخدام للتكنولوجيا، ده استقالة من المسؤولية." },
+  { t:"يقود عربية وسط زحمة القاهرة", a:"gray",
+    w:"القيادة الذاتية شغالة فعلًا في مدن منظمة بحارات واضحة. زحمة القاهرة — توك توك وعربية كارو ومشاة من كل اتجاه — تحدي من نوع تاني خالص. والسؤال الأصعب مش تقني أصلًا: لو حصلت حادثة، مين يتحاسب؟ لسه محدش حسمها عالميًا.",
+    v1:"وجهة نظر: الحساسات ما بتتعبش وما بتتشتتش بالموبايل — يمكن أأمن من سواق مرهق.",
+    v2:"الوجهة التانية: المسؤولية القانونية والأخلاقية لسه معلقة في الهوا — والزحمة الفوضوية بتكسر افتراضات النظام." },
+  { t:"يحدد مين ياخد قرض من البنك", a:"human",
+    w:"قرار بيفتح أو يقفل مستقبل ناس. البيانات التاريخية ممكن تكون ظالمة لمناطق أو فئات معينة — والنموذج هيتعلم الظلم ده بكفاءة. التحليل يساعد، والقرار والمراجعة للبشر." },
+  { t:"يقترح عليك صحاب جداد", a:"ai",
+    w:"اقتراح بسيط شكله بريء — بس خد بالك: نفس الخوارزمية اللي بتقرر مين يظهر قدامك بتشكّل دايرتك الاجتماعية كلها بالوقت. اقتراح؟ تمام. بس اعرف إن في إيد بتحرك اللي بتشوفه." }
+];
+let s4i = 0;
+
+$("s4startBtn").onclick = ()=>{
+  s4i = 0;
+  $("s4intro").style.display = "none";
+  $("s4game").style.display = "block";
+  s4Show();
+};
+function s4Show(){
+  $("s4prog").textContent = "ملف " + (s4i+1) + " / " + S4C.length;
+  const cc = $("s4case");
+  cc.style.animation = "none"; void cc.offsetWidth; cc.style.animation = "";
+  cc.textContent = "\u00AB" + S4C[s4i].t + "\u00BB";
+  $("s4judge").innerHTML = "";
+  $("s4zones").style.display = "grid";
+}
+$("s4zones").querySelectorAll(".zoneBtn").forEach(b=>{
+  b.onclick = ()=> s4Answer(b.dataset.zone);
+});
+function s4Answer(zone){
+  const c = S4C[s4i];
+  $("s4zones").style.display = "none";
+  const nextLbl = s4i+1 < S4C.length ? "الملف الجاي" : "افتح المفاجأة";
+
+  if(c.a === "gray"){
+    SND.gray();
+    addPoints(10);
+    $("s4judge").innerHTML = '<div class="judge gray">'
+      + '<span class="grayTag">'+ICON.gray+' منطقة رمادية</span>'
+      + '<p class="why">'+c.w+'</p>'
+      + '<p class="view">'+c.v1+'</p>'
+      + '<p class="view">'+c.v2+'</p>'
+      + '<p class="bonusNote">+10 محسوبة أيًا كان اختيارك — دي من الأسئلة المفتوحة</p>'
+      + '<button class="btn grn" style="margin-top:12px" id="s4nx">'+nextLbl+'</button></div>';
+  } else {
+    const ok = zone === c.a;
+    if(ok){ addPoints(10); SND.correct(); const [cx,cy]=centerOf($("s4case")); burst(cx,cy,20); }
+    else { SND.wrong(); shake(); }
+    const side = c.a === "ai" ? "الذكاء الاصطناعي يقدر يساعد" : "لازم إنسان يتحمّل المسؤولية";
+    $("s4judge").innerHTML = '<div class="judge '+(ok?'ok':'no')+'">'
+      + '<p class="verdict">'+(ok?'<span class="ico">'+ICON.check+'</span> تصنيف سليم +10':'<span class="ico">'+ICON.cross+'</span> دي أقرب لـ: '+side)+'</p>'
+      + '<p class="why">'+c.w+'</p>'
+      + '<button class="btn '+(ok?'grn':'hollow')+'" style="margin-top:12px" id="s4nx">'+nextLbl+'</button></div>';
+  }
+  $("s4nx").onclick = ()=>{
+    s4i++;
+    if(s4i < S4C.length) s4Show();
+    else {
+      $("s4game").style.display = "none";
+      $("s4twist").style.display = "block";
+      scrollTo({top:0});
+    }
+  };
+}
+$("s4twistBtn").onclick = ()=>{
+  $("s4twist").style.display = "none";
+  $("bossIntro").style.display = "block";
+  scrollTo({top:0});
+};
+
+/* =====================================================
+   التحدي الأخير — أنت المسؤول
+===================================================== */
+const BOSS = [
+  { scn:"إنت مدير مستشفى. نظام ذكاء اصطناعي بيرتّب مرضى الطوارئ وبيغلط ٥٪ من الوقت. الدكاترة المرهقين بيغلطوا ٨٪. تعمل إيه؟",
+    opts:[
+      { t:"النظام لوحده — الأرقام أهم", tag:"system",
+        cost:"غلط أقل إحصائيًا... بس أول ما يغلط في حالة واحدة، مين يواجه الأهل؟ الثقة في المستشفى كلها بتتكسر بغلطة \u00ABماكينة\u00BB.",
+        resp:"المسؤولية بترجع ليك إنت — اللي شغّلت النظام وشلت البشر من النص." },
+      { t:"الدكاترة لوحدهم — البشر أولى", tag:"people",
+        cost:"غلط أكتر بنسبة ٣٪ — يعني حالات حقيقية بتتأذى كان ممكن النظام يلحقها. الرحمة ليها تمن إحصائي.",
+        resp:"المسؤولية واضحة وموزعة على أطباء بيتحاسبوا — بس الأرقام مش في صفك." },
+      { t:"النظام يقترح والدكتور يراجع ويمضي", tag:"balance",
+        cost:"أبطأ شوية، وأغلى. وفيه فخ مخفي اسمه \u00ABتحيّز الأتمتة\u00BB: الدكتور المرهق ممكن يمضي من غير ما يراجع فعلًا.",
+        resp:"أفضل توزيع للمسؤولية — بشرط إن المراجعة تكون حقيقية مش توقيع شكلي." }
+    ],
+    pr:"السؤال مش \u00ABمين بيغلط أقل؟\u00BB — السؤال \u00ABمين بيتحمل الغلطة لما تحصل؟\u00BB" },
+  { scn:"شركتك عندها نظام بيفرز السير الذاتية أسرع ١٠٠ مرة من البشر... واكتشفت إنه بيرفض خريجي جامعات معينة أكتر من غيرهم. القرار؟",
+    opts:[
+      { t:"أوقفه فورًا مهما كانت الخسارة", tag:"people",
+        cost:"التوظيف هيبطأ، والإدارة هتتخانق معاك على الفلوس والوقت الضايع.",
+        resp:"وقفت ظلم شغال دلوقتي بمزاجك الكامل — دي أوضح صورة لتحمّل المسؤولية." },
+      { t:"أصلحه وهو شغال — الشغل ميقفش", tag:"system",
+        cost:"كل يوم بيعدي، في ناس حقيقية بتترفض ظلم وهي ولا دريانة. إنت بتوفر وقت شركتك على حساب مستقبل ناس متعرفهمش.",
+        resp:"المسؤولية عن كل رفض ظالم في فترة \u00ABالإصلاح\u00BB... عليك بالاسم." },
+      { t:"أوقفه مؤقتًا وأرجّع مراجعة بشرية لحد ما يتصلح", tag:"balance",
+        cost:"أبطأ من النظام وأغلى من إيقافه — الحل الوسط دايمًا بيدفع من الجيبين.",
+        resp:"وزّعت المسؤولية: البشر بيقرروا دلوقتي، والنظام بيتصلح بعيد عن مصائر الناس." }
+    ],
+    pr:"السرعة اللي مبنية على ظلم مش كفاءة — دي ظلم أسرع." },
+  { scn:"صاحبك سلّم بحث مكتوب كله بالذكاء الاصطناعي — من غير ما يقرأه حتى — وخد درجة أعلى منك وإنت اللي تعبت. تعمل إيه؟",
+    opts:[
+      { t:"أبلغ المدرس — القواعد قواعد", tag:"system",
+        cost:"العدل ممكن ينتصر... وممكن كمان تخسر صاحبك، وتاخد لقب \u00ABالواشي\u00BB من الفصل كله. الحق ساعات بيتدفع تمنه من علاقاتك.",
+        resp:"حمّلت النظام (المدرسة) المسؤولية — وده حقك. بس اسأل نفسك: هدفك العدل ولا الغيرة؟" },
+      { t:"أسكت — مش مشكلتي", tag:"avoid",
+        cost:"سهل النهارده... بس من بكرة الدرجات بتقيس مين بيستخدم الأدوات، مش مين فاهم. وسكوتك صوت في صالح ده.",
+        resp:"اخترت إن محدش يتحمّل — وده نفسه قرار ليه عواقب، حتى لو شكله مش قرار." },
+      { t:"أكلمه على انفراد الأول", tag:"balance",
+        cost:"مواجهة صعبة وممكن يزعل — ومفيش ضمان إنه يسمع الكلام.",
+        resp:"احترمت الصداقة وادّيته فرصة يصلّح بنفسه — لو ما سمعش، ساعتها القرار الأصعب يبقى مبرر." }
+    ],
+    pr:"الأداة مش المشكلة — المشكلة لما تبقى بديل عن عقلك بدل ما تكون مساعد ليه." }
+];
+let bossI = 0, bossTags = [], bossTimerIv = null, bossLeft = 20, bossLocked = false;
+
+function startPulse(){
+  stopPulse();
+  pulseIv = setInterval(()=>{ tone(52,0,.55,"sine",.13,44); tone(104,.02,.28,"triangle",.05); }, 1150);
+}
+let pulseIv = null;
+function stopPulse(){ clearInterval(pulseIv); pulseIv = null; }
+
+$("bossStartBtn").onclick = ()=>{
+  bossI = 0; bossTags = [];
+  $("bossIntro").style.display = "none";
+  $("bossGame").style.display = "block";
+  document.body.classList.add("bossMode");
+  startPulse();
+  bossShow();
+};
+function bossShow(){
+  const B = BOSS[bossI];
+  bossLocked = false;
+  $("bossProg").textContent = "قرار " + (bossI+1) + " / 3";
+  $("bossPanel").innerHTML = '<p class="bossScn">'+B.scn+'</p>'
+    + B.opts.map((o,i)=>'<button class="bossChoice" data-i="'+i+'">'+o.t+'</button>').join("")
+    + '<div id="bossOut"></div>';
+  $("bossPanel").querySelectorAll(".bossChoice").forEach(b=>{
+    b.onclick = ()=> bossPick(+b.dataset.i);
+  });
+  bossLeft = 20;
+  $("bossTimerFill").style.width = "100%";
+  clearInterval(bossTimerIv);
+  bossTimerIv = setInterval(()=>{
+    bossLeft -= 0.1;
+    $("bossTimerFill").style.width = Math.max(0, bossLeft/20*100) + "%";
+    if(bossLeft <= 5.05 && Math.abs(bossLeft % 1) < 0.11 && bossLeft > 0) SND.tick(5 - Math.floor(bossLeft));
+    if(bossLeft <= 0) bossPick(-1);
+  }, 100);
+}
+function bossPick(i){
+  if(bossLocked) return;
+  bossLocked = true;
+  clearInterval(bossTimerIv);
+  const B = BOSS[bossI];
+  $("bossPanel").querySelectorAll(".bossChoice").forEach((b,bi)=>{
+    b.disabled = true;
+    if(bi === i) b.style.borderColor = "#ff9aa3";
+  });
+  let out;
+  if(i === -1){
+    bossTags.push("avoid");
+    addPoints(5);
+    SND.wrong();
+    out = '<div class="judge no" style="margin-top:12px">'
+      + '<p class="verdict"><span class="ico">'+ICON.cross+'</span> الوقت مشي وإنت واقف (+5)</p>'
+      + '<p class="outLine"><b>التمن:</b> في غرفة القرارات، التأجيل مش حياد — التأجيل قرار، بس من غير ما تختار عواقبه.</p>';
+  } else {
+    const o = B.opts[i];
+    bossTags.push(o.tag);
+    addPoints(15);
+    SND.gray();
+    out = '<div class="judge gray" style="margin-top:12px;border-color:#ff9aa3">'
+      + '<p class="verdict" style="color:#ff9aa3">قرار مسجّل +15 — مفيش صح هنا، في تمن:</p>'
+      + '<p class="outLine"><b>التمن:</b> '+o.cost+'</p>'
+      + '<p class="outLine"><b>المسؤولية:</b> '+o.resp+'</p>';
+  }
+  out += '<p class="outLine pr"><b>المبدأ:</b> '+B.pr+'</p>'
+    + '<button class="btn" style="background:#ff4d5e;color:#fff;box-shadow:0 0 14px rgba(255,77,94,.5), inset 0 -4px 0 rgba(0,0,0,.3);margin-top:12px" id="bossNx">'
+    + (bossI+1 < BOSS.length ? "القرار الجاي" : "اطلع من الغرفة")
+    + '</button></div>';
+  $("bossOut").innerHTML = out;
+  $("bossNx").onclick = ()=>{
+    bossI++;
+    if(bossI < BOSS.length) bossShow();
+    else bossEnd();
+  };
+}
+function bossEnd(){
+  document.body.classList.remove("bossMode");
+  stopPulse();
+  SND.station();
+  const freq = {};
+  bossTags.forEach(t=>{ if(t!=="avoid") freq[t] = (freq[t]||0)+1; });
+  let bonusLine = "";
+  const top = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  if(top && top[1] >= 2){
+    addPoints(10);
+    const names = { system:"ثقتك في الأنظمة والقواعد", people:"انحيازك للبشر قبل الأرقام", balance:"توازنك بين الآلة والإنسان" };
+    bonusLine = '<div class="judge ok" style="margin-bottom:12px"><p class="verdict"><span class="ico">'+ICON.check+'</span> بونص ثبات المبادئ +10</p>'
+      + '<p class="why">قراراتك التلاتة كان ليها خط واضح: '+names[top[0]]+'. الثبات على منطق واحد — حتى لو الناس اختلفت معاه — علامة تفكير ناضج.</p></div>';
+  }
+  const old = $("bossBonus"); if(old) old.remove();
+  $("bossGame").style.display = "none";
+  $("s4rules").style.display = "block";
+  if(bonusLine) $("s4rules").querySelector(".panel").insertAdjacentHTML("afterbegin", '<div id="bossBonus">'+bonusLine+'</div>');
+  scrollTo({top:0});
+}
+$("s4doneBtn").onclick = ()=> finishStation(5);
+
+/* =====================================================
+   الشهادة
+===================================================== */
+function showCertificate(){
+  $("certAvatar").innerHTML = AVATARS[state.avatar].svg;
+  $("certName").textContent = state.name;
+  $("certScoreLine").textContent = state.score + " نقطة";
+  $("certStreakLine").textContent = state.bestStreak >= 4
+    ? "أطول سلسلة إجابات صح: " + state.bestStreak + " ورا بعض"
+    : "برتبة: مستكشف معتمد";
+  const shelf = $("certMedals");
+  shelf.innerHTML = "";
+  const allMedals = state.secret ? [...BADGES, SECRET_BADGE] : BADGES;
+  allMedals.forEach(b=>{
+    const d = document.createElement("div");
+    d.className = "m";
+    d.style.color = b.color;
+    d.innerHTML = b.svg + "<p>" + b.name + "</p>";
+    shelf.appendChild(d);
+  });
+  show("screen-cert");
+  SND.victory();
+  fireworks();
+}
+$("replayBtn").onclick = ()=>{
+  state.score = 0; scoreShown = 0; state.streak = 0; state.bestStreak = 0;
+  state.done = [false,false,false,false,false,false];
+  state.rocketAt = 0; state.factI = 0; state.secret = false;
+  rocketTaps = 0;
+  document.body.classList.remove("bossMode");
+  stopPulse();
+  const bb = $("bossBonus"); if(bb) bb.remove();
+  $("hudScore").firstChild.nodeValue = "0";
+  $("hud").classList.remove("on");
+  $("nameInput").value = "";
+  show("screen-entry");
+};
+</script>
+</body>
+</html>
